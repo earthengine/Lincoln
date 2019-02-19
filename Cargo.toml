@@ -1,0 +1,17 @@
+[package]
+name = "lincoln"
+version = "0.1.0"
+authors = ["Joe Ren <earthengine@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+log="*"
+env_logger="*"
+serde="*"
+serde_derive="*"
+serde_json="*"
+failure="*"
+failure_derive="*"
+regex = "*"
+smallvec="*"
+
