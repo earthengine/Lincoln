@@ -15,11 +15,20 @@ pub trait AccessMut<'a, Source> {
         'b: 'a;
 }
 
-#[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
 pub enum CodeRef {
     Entry(EntryRef),
     Extern(ExternRef),
     Termination,
+}
+impl std::fmt::Debug for CodeRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            CodeRef::Entry(e) => write!(fmt, "^{:?}", e),
+            CodeRef::Extern(e) => write!(fmt, "^{:?}", e),
+            CodeRef::Termination => write!(fmt, "^_|_"),
+        }
+    }
 }
 impl CodeRef {
     pub fn get_index(&self) -> usize {
@@ -31,7 +40,7 @@ impl CodeRef {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
 pub struct EntryRef(usize);
 impl EntryRef {
     pub fn not_found(&self) -> Error {
@@ -39,6 +48,11 @@ impl EntryRef {
     }
     pub fn new_coderef(index: usize) -> CodeRef {
         EntryRef(index).into()
+    }
+}
+impl std::fmt::Debug for EntryRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "#{}", self.0)
     }
 }
 impl From<EntryRef> for CodeRef {
@@ -61,7 +75,7 @@ impl<'a> Access<'a, Program> for EntryRef {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
 pub struct ExternRef(usize);
 impl ExternRef {
     pub fn not_found(&self) -> Error {
@@ -69,6 +83,11 @@ impl ExternRef {
     }
     pub fn new_coderef(index: usize) -> CodeRef {
         ExternRef(index).into()
+    }
+}
+impl std::fmt::Debug for ExternRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "*{}", self.0)
     }
 }
 impl From<ExternRef> for CodeRef {
@@ -91,8 +110,13 @@ impl<'a> Access<'a, Program> for ExternRef {
     }
 }
 
-#[derive(Copy, Clone, Debug, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
 pub struct GroupRef(usize);
+impl std::fmt::Debug for GroupRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "%{}", self.0)
+    }
+}
 impl GroupRef {
     pub fn new(i: usize) -> GroupRef {
         GroupRef(i)
@@ -115,9 +139,8 @@ impl GroupRef {
         let GroupRef(i) = self;
         *i
     }
-    pub fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(),Error> {
+    pub fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), Error> {
         let GroupRef(i) = self;
         Ok(p.groups[*i].push(c))
     }
 }
-

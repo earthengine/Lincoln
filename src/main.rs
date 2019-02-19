@@ -20,15 +20,15 @@ mod program;
 mod program_manager;
 mod value;
 
-use crate::fact_externs::print;
 use crate::coderef::Access;
+use crate::fact_externs::print;
 use crate::value::{Context, Value};
 use failure::Error;
 use program_manager::ProgramManager;
 use regex::{Captures, Regex};
 use std::fs::File;
 
-use std::io::{stdin, stdout, Write, Read};
+use std::io::{stdin, stdout, Read, Write};
 
 fn commands() -> Regex {
     Regex::new(concat!(
@@ -134,9 +134,11 @@ fn process(c: Captures, names: &[&str], pm: &mut ProgramManager) -> Result<bool,
             .trim());
         if let Ok(..) = std::fs::metadata(filename) {
             println!("{} is already exist. override?", filename);
-            let mut buf=[0u8];
+            let mut buf = [0u8];
             std::io::stdin().read(&mut buf)?;
-            if buf[0]!=b'Y' && buf[0]!=b'y' { return Ok(false) }
+            if buf[0] != b'Y' && buf[0] != b'y' {
+                return Ok(false);
+            }
         }
         let mut file = File::create(filename)?;
         file.write_all(json!(pm).to_string().as_bytes())?;

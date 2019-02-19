@@ -3,12 +3,14 @@ use crate::coderef::{Access, CodeRef, EntryRef, GroupRef};
 use crate::permutation::Permutation;
 use crate::program_manager::StringLike;
 use crate::value::{Context, Value};
+use core::hash::Hash;
+use core::hash::Hasher;
 use failure::Error;
 
 pub type EvalFn = fn(&'_ Program, Context) -> Result<(CodeRef, Context), Error>;
 pub type ValueFn = fn() -> Value;
 
-#[derive(Copy, Clone, Serialize, Debug, Eq, Hash)]
+#[derive(Copy, Clone, Serialize)]
 pub enum ExternEntry {
     Eval {
         name: &'static str,
@@ -21,14 +23,43 @@ pub enum ExternEntry {
         value: ValueFn,
     },
 }
+impl std::fmt::Debug for ExternEntry {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            ExternEntry::Eval { name, .. } => write!(fmt, "@{}", name),
+            ExternEntry::Value { name, .. } => write!(fmt, "@{}", name),
+        }
+    }
+}
+impl Hash for ExternEntry {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            ExternEntry::Eval { name, eval } => (name, eval as *const _ as *const ()).hash(state),
+            ExternEntry::Value { name, value } => {
+                (name, value as *const _ as *const ()).hash(state)
+            }
+        }
+    }
+}
+impl Eq for ExternEntry {}
 impl PartialEq for ExternEntry {
     fn eq(&self, other: &Self) -> bool {
         match (self, other) {
-            (ExternEntry::Eval{ name:n1, eval:e1 }, ExternEntry::Eval{ name:n2, eval:e2 }) => 
-                n1==n2 && e1 as *const _ as *const () == e2 as *const _ as *const (),
-            (ExternEntry::Value{ name:n1, value:v1 }, ExternEntry::Value{ name:n2, value:v2 })  => 
-                n1==n2 && v1 as *const _ as *const () == v2 as *const _ as *const (),
-            _ => false
+            (
+                ExternEntry::Eval { name: n1, eval: e1 },
+                ExternEntry::Eval { name: n2, eval: e2 },
+            ) => n1 == n2 && e1 as *const _ as *const () == e2 as *const _ as *const (),
+            (
+                ExternEntry::Value {
+                    name: n1,
+                    value: v1,
+                },
+                ExternEntry::Value {
+                    name: n2,
+                    value: v2,
+                },
+            ) => n1 == n2 && v1 as *const _ as *const () == v2 as *const _ as *const (),
+            _ => false,
         }
     }
 }
@@ -40,26 +71,52 @@ impl ExternEntry {
         }
     }
 }
-/*pub struct ExternEntry {
-    pub name: &'static str,
-    #[serde(skip_serializing)]
-    pub f: EvalFn,
-}*/
-#[derive(Clone, Serialize, Debug)]
-pub struct GroupEntry {
+
+#[derive(Clone, Serialize)]
+pub struct ExportEntry {
     pub name: String,
     pub g: GroupRef,
 }
+impl std::fmt::Debug for ExportEntry {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        write!(fmt, "{}: {:?}", self.name, self.g)
+    }
+}
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize)]
 pub struct Program {
     pub entries: Vec<Entry>,
     pub externs: Vec<ExternEntry>,
-    pub exports: Vec<GroupEntry>,
+    pub exports: Vec<ExportEntry>,
     pub groups: Vec<Vec<CodeRef>>,
 }
+impl std::fmt::Debug for Program {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(fmt, "\nentries:")?;
+        for (idx, entry) in self.entries.iter().enumerate() {
+            writeln!(fmt, "\t#{}: {:?}", idx, entry)?;
+        }
+        writeln!(fmt, "externs:")?;
+        for (idx, ext) in self.externs.iter().enumerate() {
+            writeln!(fmt, "\t@{}: {:?}", idx, ext)?;
+        }
+        writeln!(fmt, "externs:")?;
+        for ext in self.exports.iter() {
+            writeln!(fmt, "\t{:?}", ext)?;
+        }
+        writeln!(fmt, "groups:")?;
+        for (idx, grp) in self.groups.iter().enumerate() {
+            write!(fmt, "\t%{}: [", idx)?;
+            for ent in grp {
+                write!(fmt, "{:?},", ent)?;
+            }
+            writeln!(fmt, "]")?;
+        }
+        writeln!(fmt, "")
+    }
+}
 
-#[derive(Debug, Serialize)]
+#[derive(Serialize)]
 pub enum Entry {
     Jump {
         cont: CodeRef,
@@ -89,6 +146,19 @@ impl std::fmt::Display for Entry {
                 num_args,
                 cont.get_index()
             ),
+            Entry::Return { variant } => write!(fmt, "Return {}", variant),
+        }
+    }
+}
+impl std::fmt::Debug for Entry {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        match self {
+            Entry::Jump { cont, per } => write!(fmt, "Jump {:?} !{:?}({})", cont, per, per),
+            Entry::Call {
+                call,
+                cont,
+                num_args,
+            } => write!(fmt, "Call {:?} {:?} {:?}", call, num_args, cont),
             Entry::Return { variant } => write!(fmt, "Return {}", variant),
         }
     }
@@ -136,7 +206,9 @@ impl Program {
             let (mut ent, mut ctx) = self.eval(ctx, &ent)?;
             loop {
                 let (ent1, ctx1) = self.eval(ctx, &ent)?;
-                if let CodeRef::Termination = ent1 { break }
+                if let CodeRef::Termination = ent1 {
+                    break;
+                }
                 ent = ent1;
                 ctx = ctx1;
             }
@@ -150,7 +222,7 @@ impl Program {
             CodeRef::Entry(ent) => ent.access(self).map(|ent| format!("{}", ent)),
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(self) {
-                    if let Some(ext) = self.externs.iter().find(|ext1| *ext1==ext) {
+                    if let Some(ext) = self.externs.iter().find(|ext1| *ext1 == ext) {
                         return Some(ext.name().into());
                     }
                 }

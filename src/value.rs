@@ -1,13 +1,21 @@
-use crate::program::EvalFn;
 use crate::coderef::{Access, CodeRef, GroupRef};
 use crate::permutation::Permutation;
+use crate::program::EvalFn;
 use crate::program::{ExternEntry, Program};
 use failure::Error;
 
 use std::any::Any;
 
-#[derive(Debug)]
 pub struct Context(Vec<Value>);
+impl std::fmt::Debug for Context {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "![")?;
+        for value in self.0.iter() {
+            write!(fmt, "{:?}", value)?;
+        }
+        write!(fmt, "]!")
+    }
+}
 impl Context {
     pub fn new() -> Context {
         Context(vec![])
@@ -56,13 +64,20 @@ impl Drop for Context {
     fn drop(&mut self) {}
 }
 
-#[derive(Debug)]
 pub enum Value {
     Closure(GroupRef, Context),
     Wrapped(Box<dyn Any>),
     FinalReceiver(EvalFn),
 }
-
+impl std::fmt::Debug for Value {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            Value::Closure(grp, ctx) => write!(fmt, "{{{:?} {:?}}}", grp, ctx),
+            Value::Wrapped(bx) => write!(fmt, "|{:?}|", bx),
+            Value::FinalReceiver(f) => write!(fmt, "{:?}", f as *const _ as *const ()),
+        }
+    }
+}
 impl Value {
     pub fn wrap(v: impl Any + 'static) -> Self {
         Value::Wrapped(Box::new(v))
@@ -111,7 +126,10 @@ impl Value {
                 let ent = gr.as_entry_ref(p, variant)?;
                 Ok((ent, ctx))
             }
-            Value::FinalReceiver(f) => f(p, ctx),
+            Value::FinalReceiver(f) => {
+                let (_, ctx) = f(p, ctx)?;
+                Ok((CodeRef::Termination, ctx))
+            }
             _ => bail!("Not a closure"),
         }
     }

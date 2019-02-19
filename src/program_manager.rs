@@ -2,7 +2,7 @@ use crate::coderef::Access;
 use crate::fact_externs::FACT_EXTERNS;
 use crate::permutation::Permutation;
 use crate::program::Entry as PEntry;
-use crate::program::GroupEntry;
+use crate::program::ExportEntry;
 use crate::program::Program;
 use core::fmt::Display;
 use core::fmt::Formatter;
@@ -410,13 +410,13 @@ impl ProgramManager {
             match ent.access(self) {
                 Some(Entry::Group { .. }) => {
                     let grp = groupdef_map.get(ent).expect("group not found");
-                    prog.exports.push(GroupEntry { name, g: *grp })
+                    prog.exports.push(ExportEntry { name, g: *grp })
                 }
                 _ => {
                     let grp = prog.add_empty_group();
                     let ent = coderef_map.get(ent).expect("entry not found");
                     prog.add_group_entry(grp, *ent)?;
-                    prog.exports.push(GroupEntry { name, g: grp })
+                    prog.exports.push(ExportEntry { name, g: grp })
                 }
             }
         }
