@@ -13,5 +13,5 @@ serde_json="*"
 failure="*"
 failure_derive="*"
 regex = "*"
-smallvec="*"
+smallvec= { version="*", features=["serde"]}
 

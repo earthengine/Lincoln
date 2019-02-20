@@ -6,6 +6,9 @@ use crate::value::{Context, Value};
 use core::hash::Hash;
 use core::hash::Hasher;
 use failure::Error;
+use smallvec::SmallVec;
+
+pub type CodeGroup = SmallVec<[CodeRef; 5]>;
 
 pub type EvalFn = fn(&'_ Program, Context) -> Result<(CodeRef, Context), Error>;
 pub type ValueFn = fn() -> Value;
@@ -88,7 +91,7 @@ pub struct Program {
     pub entries: Vec<Entry>,
     pub externs: Vec<ExternEntry>,
     pub exports: Vec<ExportEntry>,
-    pub groups: Vec<Vec<CodeRef>>,
+    pub groups: Vec<CodeGroup>,
 }
 impl std::fmt::Debug for Program {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
@@ -105,10 +108,15 @@ impl std::fmt::Debug for Program {
             writeln!(fmt, "\t{:?}", ext)?;
         }
         writeln!(fmt, "groups:")?;
-        for (idx, grp) in self.groups.iter().enumerate() {
+        let grps = self.groups.iter();
+        for (idx, grp) in grps.enumerate() {
             write!(fmt, "\t%{}: [", idx)?;
-            for ent in grp {
-                write!(fmt, "{:?},", ent)?;
+            let mut grp1 = grp.iter();
+            if let Some(ent) = grp1.next() {
+                write!(fmt, "{:?}", ent)?;
+            }
+            for ent in grp1 {
+                write!(fmt, ", {:?}", ent)?;
             }
             writeln!(fmt, "]")?;
         }
@@ -185,7 +193,7 @@ impl Program {
     }
     pub fn add_empty_group(&mut self) -> GroupRef {
         let pos = GroupRef::new(self.groups.len());
-        self.groups.push(vec![]);
+        self.groups.push(smallvec![]);
         pos
     }
     pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), Error> {
@@ -196,6 +204,7 @@ impl Program {
         ctx: Context,
         export_label: impl StringLike,
         variant: u8,
+        rounds: Option<usize>,
     ) -> Result<(), Error> {
         if let Some(ent) = self
             .exports
@@ -204,34 +213,31 @@ impl Program {
         {
             let ent = ent.g.as_entry_ref(self, variant)?;
             let (mut ent, mut ctx) = self.eval(ctx, &ent)?;
+            let (check_rounds, mut rounds) = (rounds.is_some(), rounds.unwrap_or(0));
             loop {
+                if check_rounds && rounds == 0 {
+                    break;
+                };
+                if check_rounds {
+                    print!("{}: ", rounds);
+                }
                 let (ent1, ctx1) = self.eval(ctx, &ent)?;
                 if let CodeRef::Termination = ent1 {
                     break;
                 }
                 ent = ent1;
                 ctx = ctx1;
+                if check_rounds {
+                    rounds -= 1;
+                }
             }
             Ok(())
         } else {
-            bail!("invalid export label");
+            bail!("Export label not found or invalid");
         }
     }
-    fn _show_code(&self, code: CodeRef) -> Option<String> {
-        match code {
-            CodeRef::Entry(ent) => ent.access(self).map(|ent| format!("{}", ent)),
-            CodeRef::Extern(ext) => {
-                if let Some(ext) = ext.access(self) {
-                    if let Some(ext) = self.externs.iter().find(|ext1| *ext1 == ext) {
-                        return Some(ext.name().into());
-                    }
-                }
-                None
-            }
-            CodeRef::Termination => Some("Termination".into()),
-        }
-    }
-    pub fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), Error> {
+    fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), Error> {
+        println!("eval {:?} {:?}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {
@@ -244,7 +250,7 @@ impl Program {
                     num_args,
                 }) => {
                     let (mut c1, c2) = ctx.split(*num_args);
-                    let v = Value::closure(*cont, c2);
+                    let v = Value::closure_prog(*cont, c2, self)?;
                     c1.push(v);
                     Ok((*call, c1))
                 }
@@ -265,6 +271,7 @@ impl Program {
                     Err(ext.not_found())
                 }
             }
+            CodeRef::ExternFn(_, f) => f(self, ctx),
             CodeRef::Termination => bail!("Eval on termination"),
         }
     }

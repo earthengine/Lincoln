@@ -14,14 +14,16 @@ extern crate regex;
 extern crate smallvec;
 
 mod coderef;
-mod fact_externs;
+mod externs;
 mod permutation;
 mod program;
 mod program_manager;
 mod value;
 
 use crate::coderef::Access;
-use crate::fact_externs::print;
+use crate::externs::bint_externs::BINT_EXTERNS;
+use crate::externs::fact_externs::FACT_EXTERNS;
+use crate::externs::print;
 use crate::value::{Context, Value};
 use failure::Error;
 use program_manager::ProgramManager;
@@ -60,15 +62,22 @@ fn group_elements() -> Regex {
     Regex::new(r"\s+").unwrap()
 }
 
-fn captures_display(c: &Captures, names: &[&str]) {
-    for name in names {
-        if let Some(m) = c.name(name) {
-            println!("{} = {}", name, m.as_str());
-        }
-    }
+fn test1(_pm: &mut ProgramManager) -> Result<(), Error> {
+    let file = File::open("bint.json")?;
+    let mut p: ProgramManager = serde_json::from_reader(file)?;
+
+    p.set_export("entry")?;
+    let mut ctx = Context::new();
+    ctx.push(Value::FinalReceiver(print::<usize>));
+    ctx.push(Value::wrap(100usize));
+
+    let prog = dbg!(p.compile(BINT_EXTERNS)?);
+    prog.run(ctx, "entry", 0, None)?;
+
+    Ok(())
 }
 
-fn test(pm: &mut ProgramManager) -> Result<(), Error> {
+fn _test(pm: &mut ProgramManager) -> Result<(), Error> {
     pm.define_call("fact", "fact1", 2, "fact19")?; //fact c n => fact1 c n fact_rec
     pm.define_call("fact1", "fact2", 3, "zero")?; //fact1 c n f => fact2 c n f zero
 
@@ -93,7 +102,7 @@ fn test(pm: &mut ProgramManager) -> Result<(), Error> {
     pm.define_call("fact13", "copy_int", 1, "fact14")?; //fact14 n f c o => copy_int n (fact15 f c o)
 
     pm.define_jmp("fact14", "fact15", "aecdb")?; //fact15 n m f c o => fact16 n o f c m
-    pm.define_call("fact15", "minus", 2, "fact16")?; //fact16 n o c f m => minus n o (fact17 c f m)
+    pm.define_call("fact15", "minus", 2, "fact16")?; //fact16 n o f c m => minus n o (fact17 f c m)
 
     pm.define_jmp("fact16", "fact17", "ba")?; //fact17 n f c m => fact18 f n c m
     pm.define_call("fact17", "fact20", 2, "fact18")?; //fact18 n c m => fact19 f n (fact20 c m)
@@ -110,21 +119,19 @@ fn test(pm: &mut ProgramManager) -> Result<(), Error> {
     let mut file = File::create("fact.json")?;
     file.write_all(json!(pm).to_string().as_bytes())?;
 
-    let prog = pm.compile()?;
+    let prog = pm.compile(FACT_EXTERNS)?;
 
     let mut ctx = Context::new();
     ctx.push(Value::FinalReceiver(print::<usize>));
     ctx.push(Value::wrap(10usize));
-    prog.run(ctx, "fact", 0)?;
+    prog.run(ctx, "fact", 0, None)?;
 
     Ok(())
 }
 
-fn process(c: Captures, names: &[&str], pm: &mut ProgramManager) -> Result<bool, Error> {
-    captures_display(&c, names);
+fn process(c: Captures, pm: &mut ProgramManager) -> Result<bool, Error> {
     if let Some(_) = c.name("test") {
-        test(pm)?;
-        return Ok(false);
+        test1(pm)?;
     }
     if let Some(_) = c.name("save") {
         let filename = dbg!(c
@@ -134,15 +141,15 @@ fn process(c: Captures, names: &[&str], pm: &mut ProgramManager) -> Result<bool,
             .trim());
         if let Ok(..) = std::fs::metadata(filename) {
             println!("{} is already exist. override?", filename);
-            let mut buf = [0u8];
-            std::io::stdin().read(&mut buf)?;
-            if buf[0] != b'Y' && buf[0] != b'y' {
-                return Ok(false);
+            let mut line = "".into();
+            std::io::stdin().read_line(&mut line)?;
+            if line.trim() != "Y" && line.trim() != "y" {
+                return Ok(true);
             }
         }
         let mut file = File::create(filename)?;
         file.write_all(json!(pm).to_string().as_bytes())?;
-        return Ok(false);
+        println!("saved!");
     }
     if let Some(_) = c.name("load") {
         let filename = dbg!(c
@@ -152,11 +159,10 @@ fn process(c: Captures, names: &[&str], pm: &mut ProgramManager) -> Result<bool,
             .trim());
         let file = File::open(filename)?;
         let p: ProgramManager = serde_json::from_reader(file)?;
-        dbg!(p.compile()?);
-        return Ok(false);
+        pm.merge(&p)?;
     }
     if let Some(_) = c.name("exit") {
-        dbg!(pm);
+        println!("{}", pm);
         return Ok(false);
     }
     if let Some(_) = c.name("jmp") {
@@ -231,24 +237,21 @@ and so on.
 fn main() -> Result<(), Error> {
     env_logger::init();
     let commands = commands();
-    let names: Vec<&str> = commands.capture_names().filter_map(|v| v).collect();
 
-    print!("> ");
-    stdout().flush()?;
     let sin = stdin();
     let mut pm = ProgramManager::new();
     let mut line;
     loop {
+        print!("> ");
+        stdout().flush()?;
         line = "".into();
         sin.read_line(&mut line)?;
         if let Some(c) = commands.captures(&line) {
-            if !(process(c, &names, &mut pm)?) {
+            if !(process(c, &mut pm)?) {
                 return Ok(());
             }
         } else {
             print_help();
         }
-        print!("> ");
-        stdout().flush()?;
     }
 }

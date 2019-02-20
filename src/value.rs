@@ -2,16 +2,42 @@ use crate::coderef::{Access, CodeRef, GroupRef};
 use crate::permutation::Permutation;
 use crate::program::EvalFn;
 use crate::program::{ExternEntry, Program};
+use core::fmt::Debug;
 use failure::Error;
+use smallvec::SmallVec;
 
 use std::any::Any;
+
+pub trait AnyDebug: Any + Debug {
+    fn as_any(&self) -> &dyn Any;
+    fn as_debug(&self) -> &dyn Debug;
+    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any>;
+}
+impl<T> AnyDebug for T
+where
+    T: Any + Debug,
+{
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn as_debug(&self) -> &dyn Debug {
+        self
+    }
+    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any> {
+        self
+    }
+}
 
 pub struct Context(Vec<Value>);
 impl std::fmt::Debug for Context {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(fmt, "![")?;
-        for value in self.0.iter() {
+        let mut it = self.0.iter();
+        if let Some(value) = it.next() {
             write!(fmt, "{:?}", value)?;
+        }
+        for value in it {
+            write!(fmt, ", {:?}", value)?;
         }
         write!(fmt, "]!")
     }
@@ -23,7 +49,7 @@ impl Context {
     pub fn expect_args(&self, args: u8) -> Result<(), Error> {
         if self.len() != args {
             bail!(
-                "Wrong number of arguments, given {} max {}",
+                "Wrong number of arguments, given {} need {}",
                 args,
                 self.len()
             )
@@ -65,8 +91,8 @@ impl Drop for Context {
 }
 
 pub enum Value {
-    Closure(GroupRef, Context),
-    Wrapped(Box<dyn Any>),
+    Closure(SmallVec<[CodeRef; 5]>, Context),
+    Wrapped(Box<dyn AnyDebug>),
     FinalReceiver(EvalFn),
 }
 impl std::fmt::Debug for Value {
@@ -79,7 +105,7 @@ impl std::fmt::Debug for Value {
     }
 }
 impl Value {
-    pub fn wrap(v: impl Any + 'static) -> Self {
+    pub fn wrap(v: impl Any + Debug + 'static) -> Self {
         Value::Wrapped(Box::new(v))
     }
     pub fn unwrap<T>(self, p: &Program) -> Result<T, Error>
@@ -89,9 +115,12 @@ impl Value {
         match self {
             Value::Closure(gr, ctx) => {
                 if ctx.len() > 0 {
-                    bail!("unwrap non-empty closure");
+                    bail!("unwrap non-empty closure {:?} {:?}", gr, ctx);
                 }
-                match gr.as_entry_ref(p, 0)? {
+                if gr.len() != 1 {
+                    bail!("unwrap multiple or none closure")
+                }
+                match gr[0] {
                     CodeRef::Extern(ext) => {
                         if let Some(ext) = ext.access(p) {
                             match ext {
@@ -105,13 +134,19 @@ impl Value {
                 }
             }
             Value::Wrapped(bv) => bv
+                .into_boxed_any()
                 .downcast()
                 .map(|v| *v)
                 .map_err(|_| format_err!("Type mismatch")),
             Value::FinalReceiver(_) => bail!("Unwrap final receiver"),
         }
     }
-    pub fn closure(ent: GroupRef, ctx: Context) -> Value {
+    pub fn closure_prog(ent: GroupRef, ctx: Context, prog: &Program) -> Result<Value, Error> {
+        Ok(Value::Closure(ent.get_vec(prog)?, ctx))
+    }
+    pub fn closure(ents: impl AsRef<[CodeRef]>, ctx: Context) -> Value {
+        let mut ent = smallvec![];
+        ent.extend_from_slice(ents.as_ref());
         Value::Closure(ent, ctx)
     }
     pub fn eval<'a>(
@@ -120,11 +155,14 @@ impl Value {
         mut ctx: Context,
         variant: u8,
     ) -> Result<(CodeRef, Context), Error> {
+        println!("eval_value({:?}) {:?}", &self, ctx);
         match self {
             Value::Closure(gr, mut ctx1) => {
                 ctx.append(&mut ctx1);
-                let ent = gr.as_entry_ref(p, variant)?;
-                Ok((ent, ctx))
+                if variant as usize > gr.len() {
+                    bail!("variant out of bound {}/{}", variant, gr.len())
+                }
+                Ok((gr[variant as usize], ctx))
             }
             Value::FinalReceiver(f) => {
                 let (_, ctx) = f(p, ctx)?;

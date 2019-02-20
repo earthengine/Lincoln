@@ -1,15 +1,9 @@
 use crate::coderef::Access;
-use crate::fact_externs::FACT_EXTERNS;
-use crate::permutation::Permutation;
-use crate::program::Entry as PEntry;
-use crate::program::ExportEntry;
-use crate::program::Program;
-use core::fmt::Display;
-use core::fmt::Formatter;
+use crate::permutation::{AsPermutation, Permutation};
+use crate::program::{Entry as PEntry, ExportEntry, ExternEntry, Program};
+use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
-use std::collections::HashSet;
-use std::collections::{BTreeMap, HashMap};
-use std::str::FromStr;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 pub trait StringLike: Into<String> + AsRef<str> {
     fn to_string(&self) -> String {
@@ -18,7 +12,7 @@ pub trait StringLike: Into<String> + AsRef<str> {
 }
 impl<T> StringLike for T where T: Into<String> + AsRef<str> {}
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub enum Entry {
     Jmp {
         cont: EntryRef,
@@ -39,6 +33,11 @@ pub enum Entry {
         name: String,
     },
 }
+impl Debug for Entry {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
+    }
+}
 impl Entry {
     fn is_group(&self) -> bool {
         match self {
@@ -48,7 +47,7 @@ impl Entry {
     }
 }
 impl Display for Entry {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         match self {
             Entry::Jmp { cont, per } => write!(fmt, "jmp {} #!{}", cont, per),
             Entry::Call {
@@ -69,7 +68,7 @@ impl Display for Entry {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct EntryRef {
     index: usize,
 }
@@ -82,8 +81,13 @@ impl EntryRef {
         }
     }
 }
+impl Debug for EntryRef {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
+    }
+}
 impl Display for EntryRef {
-    fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         write!(fmt, "#{}", self.index)
     }
 }
@@ -101,14 +105,64 @@ impl<'a> Access<'a, ProgramManager> for EntryRef {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Serialize, Deserialize)]
 pub struct ProgramManager {
-    //prog: Program,
     defined_ent: HashMap<String, EntryRef>,
     entries: Vec<Entry>,
     exports: HashSet<String>,
 }
 impl Display for ProgramManager {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
+        for (idx, ent) in self.entries.iter().enumerate() {
+            let label = self.find_name(idx)?;
+            match ent {
+                Entry::Jmp { cont, per } => write!(
+                    fmt,
+                    "{}: jmp {} #!{}\n",
+                    label,
+                    self.find_name(cont.index)?,
+                    per
+                )?,
+                Entry::Call {
+                    callee,
+                    callcnt,
+                    callcont,
+                } => write!(
+                    fmt,
+                    "{}: call {} {} {}\n",
+                    label,
+                    self.find_name(callee.index)?,
+                    callcnt,
+                    self.find_name(callcont.index)?
+                )?,
+                Entry::Ret { variant } => write!(fmt, "{}: ret {}\n", label, variant)?,
+                Entry::Group { elements } => {
+                    write!(fmt, "{}: group ", label)?;
+                    for element in elements.iter() {
+                        write!(fmt, "{} ", self.find_name(element.index)?)?;
+                    }
+                    writeln!(fmt)?;
+                }
+                Entry::Extern { .. } => (),
+            }
+        }
+        writeln!(fmt, "")?;
+        for ent in self.entries.iter() {
+            match ent {
+                Entry::Extern { name } => {
+                    writeln!(fmt, "extern {}", name)?;
+                }
+                _ => (),
+            }
+        }
+        writeln!(fmt, "")?;
+        for exp in self.exports.iter() {
+            writeln!(fmt, "export {}", exp)?;
+        }
+        Ok(())
+    }
+}
+impl Debug for ProgramManager {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "ProgramManager {{")?;
         writeln!(fmt, "\tdefined_ent: {{")?;
@@ -126,6 +180,84 @@ impl Display for ProgramManager {
 }
 
 impl ProgramManager {
+    fn iterate<'name>(&'name self) -> impl Iterator<Item = (bool, &'name str, &'name Entry)> {
+        struct PIterator<'name>(usize, &'name ProgramManager, Vec<usize>);
+        impl<'name> Iterator for PIterator<'name> {
+            type Item = (bool, &'name str, &'name Entry);
+            fn next(&mut self) -> Option<Self::Item> {
+                let ent = EntryRef { index: self.0 };
+                let ent = ent.access(self.1);
+                if let Some(ent) = ent {
+                    let is_export = self.2.contains(&self.0);
+                    let name = if let Ok(name) = self.1.find_name(self.0) {
+                        name
+                    } else {
+                        return None;
+                    };
+                    self.0 += 1;
+                    Some((is_export, name, ent))
+                } else {
+                    None
+                }
+            }
+        }
+        let exps = self
+            .exports
+            .iter()
+            .map(|export| self.defined_ent[export].index)
+            .collect();
+        PIterator(0, self, exps)
+    }
+    pub fn merge(&mut self, other: &ProgramManager) -> Result<(), Error> {
+        for inst in other.iterate() {
+            match inst {
+                (_, _, Entry::Extern { .. }) => {}
+                (
+                    is_export,
+                    name,
+                    Entry::Call {
+                        callee,
+                        callcnt,
+                        callcont,
+                    },
+                ) => {
+                    self.define_call(
+                        name,
+                        other.find_name(callee.index)?,
+                        *callcnt,
+                        other.find_name(callcont.index)?,
+                    )?;
+                    if is_export {
+                        self.set_export(name)?
+                    }
+                }
+                (is_export, name, Entry::Group { elements }) => {
+                    let mut v = vec![];
+                    for element in elements {
+                        v.push(other.find_name(element.index)?)
+                    }
+                    self.define_group(name, &v)?;
+                    if is_export {
+                        self.set_export(name)?
+                    }
+                }
+                (is_export, name, Entry::Jmp { cont, per }) => {
+                    self.define_jmp(name, other.find_name(cont.index)?, per)?;
+                    if is_export {
+                        self.set_export(name)?
+                    }
+                }
+                (is_export, name, Entry::Ret { variant }) => {
+                    self.define_ret(name, *variant)?;
+                    if is_export {
+                        self.set_export(name)?
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+
     pub fn new() -> ProgramManager {
         ProgramManager {
             //prog: Program::new(),
@@ -133,6 +265,14 @@ impl ProgramManager {
             entries: vec![],
             exports: HashSet::new(),
         }
+    }
+    fn find_name(&self, idx: usize) -> Result<&str, std::fmt::Error> {
+        for e in self.defined_ent.iter() {
+            if e.1.index == idx {
+                return Ok(&e.0);
+            }
+        }
+        Err(std::fmt::Error::default())
     }
     pub fn set_export(&mut self, label: impl StringLike) -> Result<(), Error> {
         if self.defined_ent.contains_key(label.as_ref()) {
@@ -217,10 +357,10 @@ impl ProgramManager {
         &mut self,
         label: impl StringLike,
         cont: impl StringLike,
-        per: impl StringLike,
+        per: impl AsPermutation,
     ) -> Result<EntryRef, Error> {
         let cont = self.define_extern_or_entry(cont)?;
-        self.define_jmp_internal(label, cont, Permutation::from_str(per.as_ref())?)
+        self.define_jmp_internal(label, cont, per.as_permutation()?)
     }
     pub fn define_call(
         &mut self,
@@ -313,7 +453,7 @@ impl ProgramManager {
         }
         r
     }
-    pub fn compile(&self) -> Result<Program, Error> {
+    pub fn compile(&self, externs: impl AsRef<[ExternEntry]>) -> Result<Program, Error> {
         let mut prog = Program::new();
         let mut coderef_map = HashMap::new();
         let mut groupdef_map = HashMap::new();
@@ -326,11 +466,11 @@ impl ProgramManager {
                     .ok_or(format_err!("Invalid entry ref for PM"))?;
                 match entry {
                     Entry::Extern { name } => {
-                        if let Some(e) = FACT_EXTERNS.iter().find(|e| (*e).name() == name) {
+                        if let Some(e) = externs.as_ref().iter().find(|e| (*e).name() == name) {
                             let e = (*e).clone();
                             coderef_map.insert(entryref, prog.add_extern(e));
                         } else {
-                            bail!("Extern entry not found");
+                            bail!("Extern entry not found {}", name);
                         }
                     }
                     Entry::Ret { variant } => {

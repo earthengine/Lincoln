@@ -1,3 +1,4 @@
+use crate::program_manager::StringLike;
 use core::fmt::Display;
 use core::fmt::Error;
 use core::fmt::Formatter;
@@ -39,6 +40,32 @@ impl Display for Permutation {
             "{}",
             std::str::from_utf8(r).map_err(|_| Error::default())?
         )
+    }
+}
+impl From<&Permutation> for String {
+    fn from(s: &Permutation) -> String {
+        format!("{}", s)
+    }
+}
+pub trait AsPermutation {
+    fn as_permutation(&self) -> Result<Permutation, failure::Error>;
+}
+impl<T> AsPermutation for T
+where
+    T: StringLike,
+{
+    fn as_permutation(&self) -> Result<Permutation, failure::Error> {
+        Permutation::from_str(self.as_ref())
+    }
+}
+impl AsPermutation for Permutation {
+    fn as_permutation(&self) -> Result<Permutation, failure::Error> {
+        Ok(*self)
+    }
+}
+impl AsPermutation for &Permutation {
+    fn as_permutation(&self) -> Result<Permutation, failure::Error> {
+        Ok(**self)
     }
 }
 impl Permutation {
