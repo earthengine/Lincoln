@@ -12,6 +12,6 @@ serde_derive="*"
 serde_json="*"
 failure="*"
 failure_derive="*"
-regex = "*"
-smallvec= { version="*", features=["serde"]}
-
+regex="*"
+smallvec={ version="*", features=["serde"]}
+rustyline="*"

@@ -1,33 +1,16 @@
-use crate::coderef::{Access, CodeRef, GroupRef};
+use crate::compiled::coderef::{CodeRef, GroupRef};
+use crate::compiled::program::EvalFn;
+use crate::compiled::program::{ExternEntry, Program};
 use crate::permutation::Permutation;
-use crate::program::EvalFn;
-use crate::program::{ExternEntry, Program};
+use crate::traits::Access;
+use crate::traits::AnyDebug;
 use core::fmt::Debug;
 use failure::Error;
 use smallvec::SmallVec;
 
 use std::any::Any;
 
-pub trait AnyDebug: Any + Debug {
-    fn as_any(&self) -> &dyn Any;
-    fn as_debug(&self) -> &dyn Debug;
-    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any>;
-}
-impl<T> AnyDebug for T
-where
-    T: Any + Debug,
-{
-    fn as_any(&self) -> &dyn Any {
-        self
-    }
-    fn as_debug(&self) -> &dyn Debug {
-        self
-    }
-    fn into_boxed_any(self: Box<Self>) -> Box<dyn Any> {
-        self
-    }
-}
-
+#[derive(Default)]
 pub struct Context(Vec<Value>);
 impl std::fmt::Debug for Context {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -43,9 +26,6 @@ impl std::fmt::Debug for Context {
     }
 }
 impl Context {
-    pub fn new() -> Context {
-        Context(vec![])
-    }
     pub fn expect_args(&self, args: u8) -> Result<(), Error> {
         if self.len() != args {
             bail!(
@@ -100,7 +80,7 @@ impl std::fmt::Debug for Value {
         match self {
             Value::Closure(grp, ctx) => write!(fmt, "{{{:?} {:?}}}", grp, ctx),
             Value::Wrapped(bx) => write!(fmt, "|{:?}|", bx),
-            Value::FinalReceiver(f) => write!(fmt, "{:?}", f as *const _ as *const ()),
+            Value::FinalReceiver(_) => write!(fmt, "⟂"),
         }
     }
 }
@@ -155,7 +135,7 @@ impl Value {
         mut ctx: Context,
         variant: u8,
     ) -> Result<(CodeRef, Context), Error> {
-        println!("eval_value({:?}) {:?}", &self, ctx);
+        debug!("eval_value({:?}) {:?}", &self, ctx);
         match self {
             Value::Closure(gr, mut ctx1) => {
                 ctx.append(&mut ctx1);

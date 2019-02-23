@@ -1,4 +1,5 @@
-use crate::program_manager::StringLike;
+use crate::traits::AsPermutation;
+use crate::traits::StringLike;
 use core::fmt::Display;
 use core::fmt::Error;
 use core::fmt::Formatter;
@@ -46,9 +47,6 @@ impl From<&Permutation> for String {
     fn from(s: &Permutation) -> String {
         format!("{}", s)
     }
-}
-pub trait AsPermutation {
-    fn as_permutation(&self) -> Result<Permutation, failure::Error>;
 }
 impl<T> AsPermutation for T
 where
@@ -124,7 +122,7 @@ impl FromStr for Permutation {
                 p += p1.0;
                 p1.permutate(&mut v);
             }
-            v.pop();
+            let _ = v.pop();
         }
         Ok(Permutation(p))
     }

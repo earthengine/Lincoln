@@ -1,32 +1,56 @@
-use crate::program::ExternEntry;
-use crate::program::{Entry, Program};
+use crate::compiled::value::Context;
+use crate::compiled::value::Value;
+use crate::compiled::program::EvalFn;
+use crate::compiled::program::{CodeGroup, Entry, ExternEntry, Program};
+use crate::traits::Access;
 use failure::Error;
 
-pub trait Access<'a, Source> {
-    type Target: 'a;
-    fn access<'b>(&self, src: &'b Source) -> Self::Target
-    where
-        'b: 'a;
-}
-pub trait AccessMut<'a, Source> {
-    type Target: 'a;
-    fn access_mut<'b>(&self, src: &'b mut Source) -> Self::Target
-    where
-        'b: 'a;
-}
-
-#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize)]
 pub enum CodeRef {
     Entry(EntryRef),
     Extern(ExternRef),
+    ExternFn(&'static str, #[serde(skip_serializing)] EvalFn),
     Termination,
+}
+impl std::hash::Hash for CodeRef {
+    fn hash<H>(&self, state: &mut H)
+    where
+        H: std::hash::Hasher,
+    {
+        use CodeRef::*;
+        match self {
+            Entry(e) => e.hash(state),
+            Extern(e) => e.hash(state),
+            ExternFn(n, f) => {
+                n.hash(state);
+                (f as *const _ as *const ()).hash(state)
+            }
+            _ => "".hash(state),
+        }
+    }
+}
+impl Eq for CodeRef {}
+impl PartialEq for CodeRef {
+    fn eq(&self, other: &Self) -> bool {
+        use CodeRef::*;
+        match (self, other) {
+            (Entry(e1), Entry(e2)) => e1 == e2,
+            (Extern(e1), Extern(e2)) => e1 == e2,
+            (ExternFn(n1, f1), ExternFn(n2, f2)) => {
+                n1 == n2 && f1 as *const _ as *const () == f2 as *const _ as *const ()
+            }
+            (Termination, Termination) => true,
+            _ => false,
+        }
+    }
 }
 impl std::fmt::Debug for CodeRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
             CodeRef::Entry(e) => write!(fmt, "^{:?}", e),
             CodeRef::Extern(e) => write!(fmt, "^{:?}", e),
-            CodeRef::Termination => write!(fmt, "^_|_"),
+            CodeRef::ExternFn(name, _) => write!(fmt, "^{}", name),
+            CodeRef::Termination => write!(fmt, "^⟂"),
         }
     }
 }
@@ -40,7 +64,7 @@ impl CodeRef {
     }
 }
 
-#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EntryRef(usize);
 impl EntryRef {
     pub fn not_found(&self) -> Error {
@@ -87,7 +111,7 @@ impl ExternRef {
 }
 impl std::fmt::Debug for ExternRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "*{}", self.0)
+        write!(fmt, "@{}", self.0)
     }
 }
 impl From<ExternRef> for CodeRef {
@@ -141,6 +165,23 @@ impl GroupRef {
     }
     pub fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), Error> {
         let GroupRef(i) = self;
+        if *i > p.groups.len() {
+            bail!("Invalid group index {}", i)
+        }
         Ok(p.groups[*i].push(c))
+    }
+    pub fn get_vec(&self, p: &Program) -> Result<CodeGroup, Error> {
+        let GroupRef(i) = self;
+        if *i > p.groups.len() {
+            bail!("Invalid group index {}", i)
+        }
+        Ok(p.groups[*i].clone())
+    }
+    pub fn create_closure(&self, p: &Program, ctx: Context) -> Result<Value, Error> {
+        let GroupRef(i) = self;
+        if *i > p.groups.len() {
+            bail!("Invalid group index {}", i)
+        }
+        Ok(Value::closure(&p.groups[*i], ctx))
     }
 }

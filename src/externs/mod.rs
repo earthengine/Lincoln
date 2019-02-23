@@ -1,57 +1,137 @@
-macro_rules! eval_fn_term {
-    ($name:ident, $expect:expr, $t:ty, $v:ident, $blk:block) => {
-pub fn $name<T>(p: &crate::program::Program, mut c: crate::value::Context) ->
-    Result<(crate::coderef::CodeRef, crate::value::Context), failure::Error>
-where T: std::fmt::Display + std::any::Any + 'static
-{
-    c.expect_args($expect)?;
-    let $v = c.pop()?.unwrap::<$t>(p)?;
-
-    $blk
-    Ok((crate::coderef::CodeRef::Termination, c))
-}
-    };
-}
-
+/// This macro defines a wrapped value.
+/// 
+/// name: the name of the value
+/// value: the value
+/// 
 macro_rules! value {
-    ($name:expr, $v:expr) => {
+    ($name:expr, $exp:expr) => {
         ExternEntry::Value {
             name: $name,
-            value: || Value::wrap($v),
+            value: || Value::wrap($exp),
         }
     };
 }
 
-macro_rules! eval_fn_binary {
-    ($name:ident($p:ident, $c:ident), $cont:ident, [$v1:ident: $t1: ty, $v2:ident: $t2: ty], $blk:block) => {
+/// This macro takes one or more value(s) from the context, then unwrap it within the program.var_unwrap!
+/// 
+/// ctx: the context
+/// prog: the program
+/// var(s): the name of variables
+/// typ(s): the type of variables
+/// 
+/// The number of variables and types must match.
+macro_rules! var_unwrap {
+    ($ctx:ident,$prog:ident, []:[]) => {
+    };
+    ($ctx:ident,$prog:ident, [$var:ident]:[$typ:ty]) => {
+        let $var = $ctx.pop()?.unwrap::<$typ>($prog)?;
+    };
+    ($ctx:ident,$prog:ident, [$var:ident,$($vars:ident),+]:[$typ:ty,$($typs:ty),+]) => {
+        var_unwrap!($ctx, $prog, [$var]: [$typ]);
+        var_unwrap!($ctx, $prog, [$($vars),*]:[$($typs),*])
+    }
+}
+
+/// This macro take variables from the context, but do nothing with them.
+/// 
+/// ctx: the context
+/// var(s): the name of the varialbes
+/// 
+macro_rules! var_pop {
+    ($ctx:ident,[]) => {
+    };
+    ($ctx:ident,[$var:ident]) => {
+        let $var = $ctx.pop()?;
+    };
+    ($ctx:ident,[$var:ident, $($vars:ident),+]) => {
+        let $var = $ctx.pop()?;
+        var_pop!($ctx, [$($vars),+])
+    }
+}
+
+/// This macro defines a typed function that can be used as a external function
+/// 
+/// name: the name of the function
+/// prog: the program parameter
+/// ctx: the context parameter
+/// varcnt: the expected number of variables in the context, including the continuation
+/// cont: the "continuation" or returning variable, expected to be a closure so untyped
+/// var(s): the name of the variables
+/// typ(s): tye types of the variables
+/// blk: the function body with the variables defined
+/// 
+macro_rules! eval_fn {
+    ($name:ident($prog:ident, $ctx:ident), $varcnt:expr, $cont:ident, [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
         pub fn $name(
-            $p: &crate::program::Program,
-            mut $c: crate::value::Context,
-        ) -> Result<(crate::coderef::CodeRef, crate::value::Context), failure::Error> {
-            $c.expect_args(3)?;
-            let $cont = $c.pop()?;
-            let $v1 = $c.pop()?.unwrap::<$t1>($p)?;
-            let $v2 = $c.pop()?.unwrap::<$t2>($p)?;
+            $prog: &crate::compiled::program::Program,
+            mut $ctx: crate::compiled::value::Context,
+        ) -> Result<
+            (
+                crate::compiled::coderef::CodeRef,
+                crate::compiled::value::Context,
+            ),
+            failure::Error,
+        > {
+            $ctx.expect_args($varcnt)?;
+            let $cont = $ctx.pop()?;
+            var_unwrap!($ctx,$prog, [$($var),*]:[$($typ),*]);
 
             $blk
         }
     };
 }
-macro_rules! eval_fn_unary {
-    ($name:ident($p:ident, $c:ident), $cont:ident, [$v1:ident: $t1: ty], $blk:block) => {
+/// This macro defines a function that can be used as an external function.
+/// The types of the varialbes are unspecified, so they can be anything.
+/// 
+/// name: the name of the function
+/// prog: the program parameter
+/// ctx: the context parameter
+/// varcnt: the expected number of variables
+/// var(s): the name of the variables
+/// blk: the function body with the variables defined as Value
+/// 
+macro_rules! eval_fn_untyped {
+    ($name:ident($prog:ident, $ctx:ident), $varcnt:expr, [$($var:ident),*], $blk:block) => {
         pub fn $name(
-            $p: &crate::program::Program,
-            mut $c: crate::value::Context,
-        ) -> Result<(crate::coderef::CodeRef, crate::value::Context), failure::Error> {
-            $c.expect_args(2)?;
-            let $cont = $c.pop()?;
-            let $v1 = $c.pop()?.unwrap::<$t1>($p)?;
+            $prog: &crate::compiled::program::Program,
+            mut $ctx: crate::compiled::value::Context,
+        ) -> Result<(crate::compiled::coderef::CodeRef, crate::compiled::value::Context), failure::Error> {
+            $ctx.expect_args($varcnt)?;
+            var_pop!($ctx,[$($var),*]);
 
             $blk
         }
     };
 }
 
+/// This macro defines a terminating function that can be used to create values.
+/// Calling this function will always results in the termination of execution.
+/// 
+/// name: the name of the function
+/// prog: the program parameter
+/// ctx: the context parameter
+/// var(s): the name of the variables
+/// typ(s): the type of the variables
+/// blk: the function body 
+/// 
+macro_rules! eval_fn_term {
+    ($name:ident($prog:ident,$ctx:ident), $varcnt:expr, [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
+pub fn $name($prog: &crate::compiled::program::Program, mut $ctx: crate::compiled::value::Context) ->
+    Result<(crate::compiled::coderef::CodeRef, crate::compiled::value::Context), failure::Error>
+{
+    $ctx.expect_args($varcnt)?;
+    var_unwrap!($ctx,$prog,[$($var),*]:[$($typ),*]);
+
+    $blk
+    Ok((crate::compiled::coderef::CodeRef::Termination, $ctx))
+}
+    };
+}
+
+/// This macro creates an ExternEntry with a given name and an evaluable function.
+/// 
+/// name: the name of the entry
+/// eval: the function or closure
 macro_rules! eval {
     ($name:expr, $eval:expr) => {
         ExternEntry::Eval {
@@ -64,6 +144,16 @@ macro_rules! eval {
 pub mod bint_externs;
 pub mod fact_externs;
 
-eval_fn_term!(print, 1, usize, v, {
-    println!("Result: {}", v);
+eval_fn_term!(print(p,c), 1, []:[], {
+    if c.len()==0{
+        println!("no result!");
+    } else {
+        let mut i=1;
+        let len=c.len();
+        while c.len()>0 {
+            var_unwrap!(c,p,[v]:[usize]);
+            println!("Result({}/{}): {}", i,len,v);
+            i+=1;
+        }
+    }
 });

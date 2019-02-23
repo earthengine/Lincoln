@@ -1,105 +1,80 @@
-use crate::program::ExternEntry;
-use crate::value::Value;
+use crate::compiled::program::ExternEntry;
+use crate::compiled::value::Value;
 
-pub fn _from(
-    p: &crate::program::Program,
-    mut c: crate::value::Context,
-) -> Result<(crate::coderef::CodeRef, crate::value::Context), failure::Error> {
-    c.expect_args(2)?;
-    let v = c.pop()?.unwrap::<usize>(p)?;
-    let cont = c.pop()?;
-
-    println!("v={}", v);
-    let from1 = crate::coderef::CodeRef::ExternFn("from", _from);
+eval_fn_untyped!(_from(p,c),2,[v,cont],{
+    let v=v.unwrap::<usize>(p)?;
+    debug!("from {}", v);
+    let mut ctx: crate::compiled::value::Context = Default::default();
+    let from1 = crate::compiled::coderef::CodeRef::ExternFn("from", _from);
     if v == 0 {
         cont.eval(p, c, 0)
     } else if v % 2 == 1 {
         let n = (v - 1) / 2;
-        let mut ctx = crate::value::Context::new();
         ctx.push(Value::wrap(n));
-        let closure = Value::closure(&[from1], ctx);
-        c.push(closure);
+        c.push(Value::closure(&[from1], ctx));
         cont.eval(p, c, 1)
     } else {
         let n = (v - 2) / 2;
-        let mut ctx = crate::value::Context::new();
         ctx.push(Value::wrap(n));
-        let closure = Value::closure(&[from1], ctx);
-        c.push(closure);
+        c.push(Value::closure(&[from1], ctx));
         cont.eval(p, c, 2)
     }
-}
+});
+eval_fn_untyped!(_onzero(p,c),1,[cont],{
+    c.push(Value::wrap(0usize));
+    cont.eval(p, c, 0)
+});
+eval_fn!(_onodd_result(p,c),2,cont,[v]:[usize],{
+    c.push(Value::wrap(v * 2 + 1));
+    cont.eval(p, c, 0)
+});
+eval_fn_untyped!(_onodd(p,c),2,[cont,v],{
+    let mut ctx: crate::compiled::value::Context = Default::default();
+    ctx.push(cont);
+    let closure = Value::closure(
+        &[crate::compiled::coderef::CodeRef::ExternFn(
+            "onodd_result",
+            _onodd_result,
+        )],
+        ctx,
+    );
+    c.push(v);
+    c.push(closure);
+    _count(p, c)
+});
+eval_fn!(_oneven_result(p,c),2,cont,[v]:[usize],{
+    c.push(Value::wrap(v * 2 + 2));
+    cont.eval(p, c, 0)
+});
+eval_fn_untyped!(_oneven(p,c),2,[cont,v],{
+    let mut ctx: crate::compiled::value::Context = Default::default();
+    ctx.push(cont);
+    let closure = Value::closure(
+        &[crate::compiled::coderef::CodeRef::ExternFn(
+            "oneven_result",
+            _oneven_result,
+        )],
+        ctx,
+    );
+    c.push(v);
+    c.push(closure);
+    _count(p, c)
+});
+eval_fn_untyped!(_count(p,c),2,[cont, v],{
+    debug!("count ");
 
-pub fn _count(
-    p: &crate::program::Program,
-    mut c: crate::value::Context,
-) -> Result<(crate::coderef::CodeRef, crate::value::Context), failure::Error> {
-    c.expect_args(2)?;
-    let v1 = c.pop()?;
-    let cont = c.pop()?;
-    println!("count {:?} {:?}", cont, v1);
-
-    let mut ctx = crate::value::Context::new();
+    let mut ctx: crate::compiled::value::Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
         &[
-            crate::coderef::CodeRef::ExternFn("onzero", |p, mut c| {
-                c.expect_args(1)?;
-                let cont = c.pop()?;
-                c.push(Value::wrap(0usize));
-                cont.eval(p, c, 0)
-            }),
-            crate::coderef::CodeRef::ExternFn("onodd", |p, mut c| {
-                c.expect_args(2)?;
-                let cont = c.pop()?;
-                let v = c.pop()?;
-                let mut ctx = crate::value::Context::new();
-                ctx.push(cont);
-                let closure = Value::closure(
-                    &[crate::coderef::CodeRef::ExternFn(
-                        "onodd_result",
-                        |p, mut c| {
-                            c.expect_args(2)?;
-                            let cont = c.pop()?;
-                            let v = c.pop()?.unwrap::<usize>(p)?;
-                            c.push(Value::wrap(v * 2 + 1));
-                            cont.eval(p, c, 0)
-                        },
-                    )],
-                    ctx,
-                );
-                c.push(closure);
-                c.push(v);
-                _count(p, c)
-            }),
-            crate::coderef::CodeRef::ExternFn("oneven", |p, mut c| {
-                c.expect_args(2)?;
-                let cont = c.pop()?;
-                let v = c.pop()?;
-                let mut ctx = crate::value::Context::new();
-                ctx.push(cont);
-                let closure = Value::closure(
-                    &[crate::coderef::CodeRef::ExternFn(
-                        "oneven_result",
-                        |p, mut c| {
-                            c.expect_args(2)?;
-                            let cont = c.pop()?;
-                            let v = c.pop()?.unwrap::<usize>(p)?;
-                            c.push(Value::wrap(v * 2 + 2));
-                            cont.eval(p, c, 0)
-                        },
-                    )],
-                    ctx,
-                );
-                c.push(closure);
-                c.push(v);
-                _count(p, c)
-            }),
+            crate::compiled::coderef::CodeRef::ExternFn("onzero", _onzero),
+            crate::compiled::coderef::CodeRef::ExternFn("onodd", _onodd),
+            crate::compiled::coderef::CodeRef::ExternFn("oneven", _oneven),
         ],
         ctx,
     );
     c.push(closure);
-    v1.eval(p, c, 0)
-}
+    v.eval(p, c, 0)
+});
 
 pub const BINT_EXTERNS: &[ExternEntry] = &[eval!("from", _from), eval!("count", _count)];

@@ -1,8 +1,8 @@
-use crate::coderef::ExternRef;
-use crate::coderef::{Access, CodeRef, EntryRef, GroupRef};
+use crate::compiled::coderef::ExternRef;
+use crate::compiled::coderef::{CodeRef, EntryRef, GroupRef};
+use crate::compiled::value::{Context, Value};
 use crate::permutation::Permutation;
-use crate::program_manager::StringLike;
-use crate::value::{Context, Value};
+use crate::traits::{Access, StringLike};
 use core::hash::Hash;
 use core::hash::Hasher;
 use failure::Error;
@@ -86,7 +86,7 @@ impl std::fmt::Debug for ExportEntry {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Default)]
 pub struct Program {
     pub entries: Vec<Entry>,
     pub externs: Vec<ExternEntry>,
@@ -103,7 +103,7 @@ impl std::fmt::Debug for Program {
         for (idx, ext) in self.externs.iter().enumerate() {
             writeln!(fmt, "\t@{}: {:?}", idx, ext)?;
         }
-        writeln!(fmt, "externs:")?;
+        writeln!(fmt, "exports:")?;
         for ext in self.exports.iter() {
             writeln!(fmt, "\t{:?}", ext)?;
         }
@@ -173,14 +173,6 @@ impl std::fmt::Debug for Entry {
 }
 
 impl Program {
-    pub fn new() -> Program {
-        Program {
-            entries: vec![],
-            externs: vec![],
-            exports: vec![],
-            groups: vec![],
-        }
-    }
     pub fn add_extern(&mut self, ent: ExternEntry) -> CodeRef {
         let pos = ExternRef::new_coderef(self.externs.len());
         self.externs.push(ent);
@@ -199,6 +191,28 @@ impl Program {
     pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), Error> {
         grp.push_to(ent, self)
     }
+    pub fn get_export_ent(&self, export_label: impl StringLike, variant: u8) -> Result<CodeRef, Error> {
+        if let Some(ent) = self
+            .exports
+            .iter()
+            .find(|e| e.name == export_label.as_ref())
+        {
+            ent.g.as_entry_ref(self, variant)
+        } else {
+            bail!("Export label not found or invalid");
+        }
+    }
+    pub fn get_export(&self, export_label: impl StringLike) -> Result<GroupRef, Error> {
+        if let Some(ent) = self
+            .exports
+            .iter()
+            .find(|e| e.name == export_label.as_ref())
+        {
+            Ok(ent.g)
+        } else {
+            bail!("Export label not found or invalid");
+        }
+    }
     pub fn run(
         &self,
         ctx: Context,
@@ -206,38 +220,28 @@ impl Program {
         variant: u8,
         rounds: Option<usize>,
     ) -> Result<(), Error> {
-        if let Some(ent) = self
-            .exports
-            .iter()
-            .find(|e| e.name == export_label.as_ref())
-        {
-            let ent = ent.g.as_entry_ref(self, variant)?;
-            let (mut ent, mut ctx) = self.eval(ctx, &ent)?;
-            let (check_rounds, mut rounds) = (rounds.is_some(), rounds.unwrap_or(0));
-            loop {
-                if check_rounds && rounds == 0 {
-                    break;
-                };
-                if check_rounds {
-                    print!("{}: ", rounds);
-                }
-                let (ent1, ctx1) = self.eval(ctx, &ent)?;
-                if let CodeRef::Termination = ent1 {
-                    break;
-                }
-                ent = ent1;
-                ctx = ctx1;
-                if check_rounds {
-                    rounds -= 1;
-                }
+        let ent = self.get_export_ent(export_label, variant)?;
+        let mut evalresult = self.eval(ctx, &ent)?;
+        let (check_rounds, mut rounds) = (rounds.is_some(), rounds.unwrap_or(0));
+        loop {
+            if check_rounds && rounds == 0 {
+                break;
+            };
+            if check_rounds {
+                print!("{}: ", rounds);
             }
-            Ok(())
-        } else {
-            bail!("Export label not found or invalid");
+            evalresult = self.eval(evalresult.1, &evalresult.0)?;
+            if let CodeRef::Termination = evalresult.0 {
+                break;
+            }
+            if check_rounds {
+                rounds -= 1;
+            }
         }
+        Ok(())
     }
-    fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), Error> {
-        println!("eval {:?} {:?}", ent, ctx);
+    pub fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), Error> {
+        debug!("eval {:?} {:?}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {
