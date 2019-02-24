@@ -48,7 +48,7 @@ When talking about "another entry or an external function" in code entries, I am
 * ExternFn. A "extern" function that can be provided by the external world, but not defined in the program.
 * Termination. Indiciate the execution that the execution is finish.
 
-# Build and the program
+# Build and run the program
 
 Run the following in a console:
 ```sh
