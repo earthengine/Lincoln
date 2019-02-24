@@ -6,7 +6,7 @@ use core::fmt::Formatter;
 use core::str::FromStr;
 use smallvec::SmallVec;
 
-pub const FACTS: [usize; 20] = [
+pub const FACTS: [u64; 20] = [
     1,
     2,
     6,
@@ -30,7 +30,7 @@ pub const FACTS: [usize; 20] = [
 ];
 
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
-pub struct Permutation(pub usize);
+pub struct Permutation(pub u64);
 impl Display for Permutation {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         let mut v = *b"abcdefghijklmnopqrst";
@@ -70,11 +70,11 @@ impl Permutation {
     pub fn permutate<T>(&self, values: &mut [T]) {
         let mut v = self.0;
         for i in 1..values.len() {
-            let r = v % (i + 1);
+            let r = v % (i + 1) as u64;
             if r > 0 {
-                values.swap(r - 1, i)
+                values.swap((r - 1) as usize, i)
             };
-            v = v / (i + 1);
+            v = v / (i + 1) as u64;
         }
     }
     fn identical() -> Permutation {
@@ -84,8 +84,8 @@ impl Permutation {
         if j == 0 {
             return Self::identical();
         }
-        let (i, j) = (i as usize, j as usize);
-        Permutation(FACTS[i + j - 1] * (i + 1))
+        let (i, j) = (i as u64, j as u64);
+        Permutation(FACTS[(i + j - 1) as usize] * (i + 1))
     }
     pub fn len(&self) -> u8 {
         match FACTS.binary_search_by(|v| v.cmp(&self.0)) {
@@ -95,8 +95,8 @@ impl Permutation {
         }
     }
 }
-impl From<usize> for Permutation {
-    fn from(v: usize) -> Self {
+impl From<u64> for Permutation {
+    fn from(v: u64) -> Self {
         Self(v)
     }
 }
