@@ -1,10 +1,8 @@
-use crate::compiled::coderef::ExternRef;
-use crate::compiled::coderef::{CodeRef, EntryRef, GroupRef};
+use crate::compiled::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::compiled::value::{Context, Value};
 use crate::permutation::Permutation;
 use crate::traits::{Access, StringLike};
-use core::hash::Hash;
-use core::hash::Hasher;
+use core::hash::{Hash, Hasher};
 use failure::Error;
 use smallvec::SmallVec;
 
@@ -191,7 +189,11 @@ impl Program {
     pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), Error> {
         grp.push_to(ent, self)
     }
-    pub fn get_export_ent(&self, export_label: impl StringLike, variant: u8) -> Result<CodeRef, Error> {
+    pub fn get_export_ent(
+        &self,
+        export_label: impl StringLike,
+        variant: u8,
+    ) -> Result<CodeRef, Error> {
         if let Some(ent) = self
             .exports
             .iter()

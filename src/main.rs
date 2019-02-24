@@ -3,18 +3,15 @@
 
 #[macro_use]
 extern crate log;
-extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
 #[macro_use]
 extern crate failure;
-extern crate failure_derive;
 extern crate regex;
 #[macro_use]
 extern crate smallvec;
-extern crate rustyline;
 
 pub mod command;
 pub mod compiled;
@@ -67,7 +64,7 @@ fn main() -> Result<(), Error> {
     loop {
         let line = rl.readline("Lincoln> ")?;
         let l: &str = &line;
-        let _=rl.add_history_entry(l);
+        let _ = rl.add_history_entry(l);
         rl.save_history("history.txt")?;
 
         if let Some(c) = commands.captures(&line) {

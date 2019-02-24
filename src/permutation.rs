@@ -1,8 +1,5 @@
-use crate::traits::AsPermutation;
-use crate::traits::StringLike;
-use core::fmt::Display;
-use core::fmt::Error;
-use core::fmt::Formatter;
+use crate::traits::{AsPermutation, StringLike};
+use core::fmt::{Display, Error, Formatter};
 use core::str::FromStr;
 use smallvec::SmallVec;
 

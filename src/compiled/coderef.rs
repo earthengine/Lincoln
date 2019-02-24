@@ -1,7 +1,5 @@
-use crate::compiled::value::Context;
-use crate::compiled::value::Value;
-use crate::compiled::program::EvalFn;
-use crate::compiled::program::{CodeGroup, Entry, ExternEntry, Program};
+use crate::compiled::program::{CodeGroup, Entry, EvalFn, ExternEntry, Program};
+use crate::compiled::value::{Context, Value};
 use crate::traits::Access;
 use failure::Error;
 

@@ -256,8 +256,8 @@ impl PreCompileProgram {
     }
     pub fn delete_ent(&mut self, label: impl StringLike) {
         if let Some(ent) = self.defined_ent.get(label.as_ref()) {
-            if ent.index<self.entries.len() {
-                self.entries[ent.index] = Entry::Extern{ name: label.into() };
+            if ent.index < self.entries.len() {
+                self.entries[ent.index] = Entry::Extern { name: label.into() };
             }
         }
     }
@@ -547,22 +547,19 @@ impl PreCompileProgram {
             let ent_orig = format!("{}", &self.entries[ext.index]);
             info!("Redefine {} => {}", ent_orig, ent);
             //if let Entry::Extern { .. } = ent_orig {
-                self.entries[ext.index] = ent;
-            //} else {
-                //bail!("Redefine entry that is not extern: {} => {}", ent_orig, ent);
-                
-            //}
+            self.entries[ext.index] = ent;
+        //} else {
+        //bail!("Redefine entry that is not extern: {} => {}", ent_orig, ent);
+
+        //}
         } else {
             self.entries.push(ent);
             let _ = self.defined_ent.insert(label.into(), ret);
         }
         Ok(ret)
     }
-    fn define_extern_or_entry(
-        &mut self,
-        name: impl StringLike,
-    ) -> Result<EntryRef, Error> {
-         if let Some(ent) = self.defined_ent.get(name.as_ref()) {
+    fn define_extern_or_entry(&mut self, name: impl StringLike) -> Result<EntryRef, Error> {
+        if let Some(ent) = self.defined_ent.get(name.as_ref()) {
             return Ok(*ent);
         }
         let ent = Entry::Extern {

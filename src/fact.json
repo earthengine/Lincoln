@@ -1,0 +1,28 @@
+{
+    "entries":[
+        {"Return":{"variant":1}},
+        {"Jump":{"cont":{"Extern":5},"per":5}},
+        {"Return":{"variant":0}},
+        {"Call":{"call":{"Extern":3},"cont":0,"num_args":2}},
+        {"Return":{"variant":0}},{"Return":{"variant":0}},
+        {"Jump":{"cont":{"Entry":5},"per":4}},
+        {"Call":{"call":{"Entry":2},"cont":1,"num_args":1}},
+        {"Jump":{"cont":{"Entry":3},"per":11}},
+        {"Call":{"call":{"Entry":6},"cont":2,"num_args":2}},
+        {"Call":{"call":{"Entry":0},"cont":3,"num_args":1}},
+        {"Call":{"call":{"Extern":0},"cont":4,"num_args":1}},
+        {"Jump":{"cont":{"Entry":11},"per":1}},
+        {"Call":{"call":{"Extern":1},"cont":5,"num_args":2}},
+        {"Call":{"call":{"Extern":6},"cont":6,"num_args":1}},
+        {"Jump":{"cont":{"Entry":13},"per":11}},
+        {"Call":{"call":{"Entry":12},"cont":7,"num_args":0}},
+        {"Jump":{"cont":{"Entry":14},"per":2}},
+        {"Call":{"call":{"Entry":16},"cont":8,"num_args":0}},
+        {"Call":{"call":{"Extern":0},"cont":9,"num_args":1}},
+        {"Jump":{"cont":{"Entry":19},"per":5}},
+        {"Call":{"call":{"Entry":20},"cont":1,"num_args":3}
+    }],
+    "exports":[{"g":10,"name":"fact"}],
+    "externs":[{"name":"copy_int"},{"name":"minus"},{"name":"one"},{"name":"eq"},{"name":"zero"},{"name":"mul"},{"name":"drop_int"}],
+    "groups":[[{"Entry":17},{"Entry":21}],[{"Extern":2}],[{"Entry":1}],[{"Entry":7}],[{"Entry":8}],[{"Entry":9}],[{"Entry":10}],[{"Extern":4}],[{"Entry":18},{"Entry":4}],[{"Entry":15}],[{"Entry":18}]]
+}

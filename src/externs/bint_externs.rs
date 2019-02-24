@@ -1,8 +1,8 @@
 use crate::compiled::program::ExternEntry;
 use crate::compiled::value::Value;
 
-eval_fn_untyped!(_from(p,c),2,[v,cont],{
-    let v=v.unwrap::<usize>(p)?;
+eval_fn_untyped!(_from(p, c), 2, [v, cont], {
+    let v = v.unwrap::<usize>(p)?;
     debug!("from {}", v);
     let mut ctx: crate::compiled::value::Context = Default::default();
     let from1 = crate::compiled::coderef::CodeRef::ExternFn("from", _from);
@@ -20,15 +20,15 @@ eval_fn_untyped!(_from(p,c),2,[v,cont],{
         cont.eval(p, c, 2)
     }
 });
-eval_fn_untyped!(_onzero(p,c),1,[cont],{
+eval_fn_untyped!(_onzero(p, c), 1, [cont], {
     c.push(Value::wrap(0usize));
     cont.eval(p, c, 0)
 });
-eval_fn!(_onodd_result(p,c),2,cont,[v]:[usize],{
+eval_fn!(_onodd_result(p, c), 2, cont, [v]: [usize], {
     c.push(Value::wrap(v * 2 + 1));
     cont.eval(p, c, 0)
 });
-eval_fn_untyped!(_onodd(p,c),2,[cont,v],{
+eval_fn_untyped!(_onodd(p, c), 2, [cont, v], {
     let mut ctx: crate::compiled::value::Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
@@ -42,11 +42,11 @@ eval_fn_untyped!(_onodd(p,c),2,[cont,v],{
     c.push(closure);
     _count(p, c)
 });
-eval_fn!(_oneven_result(p,c),2,cont,[v]:[usize],{
+eval_fn!(_oneven_result(p, c), 2, cont, [v]: [usize], {
     c.push(Value::wrap(v * 2 + 2));
     cont.eval(p, c, 0)
 });
-eval_fn_untyped!(_oneven(p,c),2,[cont,v],{
+eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
     let mut ctx: crate::compiled::value::Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
@@ -60,7 +60,7 @@ eval_fn_untyped!(_oneven(p,c),2,[cont,v],{
     c.push(closure);
     _count(p, c)
 });
-eval_fn_untyped!(_count(p,c),2,[cont, v],{
+eval_fn_untyped!(_count(p, c), 2, [cont, v], {
     debug!("count ");
 
     let mut ctx: crate::compiled::value::Context = Default::default();

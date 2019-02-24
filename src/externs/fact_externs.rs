@@ -22,8 +22,10 @@ eval_fn!(_minus(p, c), 3, cont, [n1,n2]:[usize,usize], {
     cont.eval(p, c, 0)
 });
 
-eval_fn!(_drop_int(p, c), 2, cont, [_v1]:[usize], { cont.eval(p, c, 0) });
-eval_fn!(_copy_int(p, c), 2, cont, [v]:[usize], {
+eval_fn!(_drop_int(p, c), 2, cont, [_v1]: [usize], {
+    cont.eval(p, c, 0)
+});
+eval_fn!(_copy_int(p, c), 2, cont, [v]: [usize], {
     c.push(Value::wrap(v));
     c.push(Value::wrap(v));
 

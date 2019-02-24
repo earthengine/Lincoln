@@ -3,12 +3,12 @@ use crate::compiled::program::Program;
 use crate::compiled::value::{Context, Value};
 use crate::externs::bint_externs::BINT_EXTERNS;
 use crate::externs::fact_externs::FACT_EXTERNS;
-use crate::externs::{print};
+use crate::externs::print;
 use crate::pre_compile::PreCompileProgram;
 use crate::traits::Access;
 use core::fmt::{Display, Formatter};
 use failure::Error;
-use regex::{Captures,Regex};
+use regex::{Captures, Regex};
 use std::fs::File;
 use std::io::Write;
 
@@ -220,11 +220,8 @@ impl CommandContext {
         println!("bint");
         Ok(true)
     }
-    fn delete(&mut self, c:Captures) -> Result<bool, Error> {
-        let label = c
-            .name("deletelabel")
-            .expect("deletelabel is none")
-            .as_str();
+    fn delete(&mut self, c: Captures) -> Result<bool, Error> {
+        let label = c.name("deletelabel").expect("deletelabel is none").as_str();
         self.program_mut().delete_ent(label);
         Ok(true)
     }
@@ -297,8 +294,9 @@ impl CommandContext {
         ctx.push(Value::FinalReceiver(print));
         ctx.push(Value::wrap(value));
         let (program, compiled, is_stepping) = match self {
-            Idle { compiled: None, .. } => 
-                bail!("Program is not compiled. Please compile it first (use compile command)"),            
+            Idle { compiled: None, .. } => {
+                bail!("Program is not compiled. Please compile it first (use compile command)")
+            }
             Idle {
                 compiled: Some(compiled),
                 program,

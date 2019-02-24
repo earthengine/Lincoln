@@ -1,9 +1,7 @@
 use crate::compiled::coderef::{CodeRef, GroupRef};
-use crate::compiled::program::EvalFn;
-use crate::compiled::program::{ExternEntry, Program};
+use crate::compiled::program::{EvalFn, ExternEntry, Program};
 use crate::permutation::Permutation;
-use crate::traits::Access;
-use crate::traits::AnyDebug;
+use crate::traits::{Access, AnyDebug};
 use core::fmt::Debug;
 use failure::Error;
 use smallvec::SmallVec;
