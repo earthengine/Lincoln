@@ -29,7 +29,7 @@ impl Context {
     pub fn expect_args(&self, args: u8) -> Result<(), Error> {
         if self.len() != args {
             bail!(
-                "Wrong number of arguments, given {} need {}",
+                "Wrong number of arguments, need {} given {}",
                 args,
                 self.len()
             )

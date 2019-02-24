@@ -27,8 +27,6 @@ use crate::command::{commands, process, CommandContext};
 use failure::Error;
 use rustyline::Editor;
 
-use std::io::{stdin, stdout, Write};
-
 fn print_help() {
     println!(
         r#"Syntax (<label> are identifiers, [number:u8] are numbers): 
@@ -63,7 +61,6 @@ fn main() -> Result<(), Error> {
     env_logger::init();
     let commands = commands();
 
-    let sin = stdin();
     let mut cmdctx = CommandContext::default();
     let mut rl = Editor::<()>::new();
     rl.load_history("history.txt").unwrap_or(());

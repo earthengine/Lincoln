@@ -115,11 +115,10 @@ macro_rules! eval_fn_untyped {
 /// blk: the function body 
 /// 
 macro_rules! eval_fn_term {
-    ($name:ident($prog:ident,$ctx:ident), $varcnt:expr, [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
+    ($name:ident($prog:ident,$ctx:ident), [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
 pub fn $name($prog: &crate::compiled::program::Program, mut $ctx: crate::compiled::value::Context) ->
     Result<(crate::compiled::coderef::CodeRef, crate::compiled::value::Context), failure::Error>
 {
-    $ctx.expect_args($varcnt)?;
     var_unwrap!($ctx,$prog,[$($var),*]:[$($typ),*]);
 
     $blk
@@ -144,7 +143,7 @@ macro_rules! eval {
 pub mod bint_externs;
 pub mod fact_externs;
 
-eval_fn_term!(print(p,c), 1, []:[], {
+eval_fn_term!(print(p,c), []:[], {
     if c.len()==0{
         println!("no result!");
     } else {

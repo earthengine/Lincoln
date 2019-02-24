@@ -1,72 +1,145 @@
-# Lincoln
+# What is Lincoln?
 
-What do you need to do to write an intepreter? This is an attempt to minimalise the things an interpreter writer need to concern.
+Lincoln is a simple conceptual programming environment. Rather than focusing on making programming easier, it is aim to be a easy computing model at the moment. So do not expect programming in Lincoln would be easy. However, it have very easy concepts and brain models, so it is not hard to learn.
 
-## Piror Arts
+The name "Lincoln" is to regard the great American president, but it also means short pronunciation "Linear Continuation", which means:
 
-There are a few computing model is generally considered "minimal" or simplest.
+* Every statement have a continuation, either through the context value, or through the statement setting.
+* All values are linear, including the continuations, which means they can only be used once and have to be used once.
 
-### Turing Machine
+# What is continuation?
 
-The Turing machine is the first model that being accepted to be the definition of "computable", and its defintion is very simple. 
+In other languages you have functions, which you get a value back from calling a function. A function works on a stack, and a stack is a special kind of data: the size is dynamic. In Lincoln, all values are like the stack, even the "return
 
-Its operational definition makes it easy to estimate the complexity of a specific algorithm, because each operational state transfer is garanteed to have the same amount of work to finish.
+# Concepts
 
-However, to create a Turing machine that solve a problem in practice, will require a lot of work to represent the concepts in the problem, as Turing machine's concept (states, head movements, read/write and symbols) is too simple and does not mean anything.
+## Permutation
 
-It is also not easy to seperate a big machine into its parts to understand what and how it does. This makes it extremly hard for human being.
+When a continuation is going to be executed, we use permutations to reorder the values. We use the Fisher and Yate's algorithm (but instead of generate the number randomly, specify the number) to map a permutation into a set of numbers, then map these numbers into a single number, stored in a 64 bit unsigned number.
 
-### Lambda expression
+As a result of a 64 bit number cannot present a number greater than 20!, we limit the number of values to 20.
 
-On the other hand, lambda expression is also considered simple as it only contains very limited operations, and it is sementical. It is easy for human being to understand, because it is built from small parts with easy combinators.
+## Context
 
-Unfortunately, it lacks proper operational defintion: the evaluation order is not defined (we have call-by-name and call-by-value variants), and the basic operation (reduction) is based on substitution, a single state transfer can have a huge effect - the result of a single state transfer can be 100 times longer than before, although it is still have linear complexity.
+A context is a set of values. In theory, we allow any number of values in a contexts. For the reason that we do not allow permutations for more than 20 elements, we limit the number of elements of a context to 20.
 
-## What does "minimalism" mean?
+## Values
 
-I mean a very strict rule that if any feature can be implemented outside the intepreter, we don't include it as a feature. Precicelly, this means:
+A contaxt can contain the following values:
 
-### Opaque Values
+* Closure. A closure contains a reference to a group of code entry, and a set of "captured" values, stored in a context.
+* Wrapped. A wrapped value presents a value that is only undersood by the execution engine. In this demostration this can be anything that is `Any`.
+* FinalReceiver. This represents a special value that was provided by the execution engine only. When it was evaluated the program execution ends normally.
 
-Every language have values, so does mine. However, the values in this system is opaque, which means I don't assume any operation is possible on the values, except receiving from and sending them to the external world. This means you cannot create, destroy or copy any values came from the outside.
+## Code entries
 
-However, the language do include a special type of value called "Closures", which are simple wrappers over external values. You can create them by wrapping it, or destroy it by unwrapping to external values. And that is all you can do. If you have such a value, you cannot simply drop it nor copy it. You also even cannot alias it.
+A program contains a set of code entries, or instructions. There are 4 different kind of code entries:
 
-Don't even think about more complicated stuff like threading etc, they can be done in the external world only!
+* Jump. After performing a permutation on the current context, jump to another entry or an external function.
+* Call. Create a value in the current context with part or the current context, and a group of entries or external functions. Then jump to another entry or external function.
+* Ret. Evaluate the first closure value in the current context. A specified "variant" is use to pick one entry from the group.
 
-### Runtime type system
+## Code references
 
-I don't offer static type system. Instead, every type are assumed the same. The intepreter will tell you that you have wrong number of values, called the wrong entry point etc, but when you build the program, you are not pretected by a type system. So be careful when coding!
+When talking about "another entry or an external function" in code entries, I am talking about code references. A code reference is pointing to one of the following:
 
-(This does not mean that we cannot make a static type system though; it is just not in the scope yet and it will soon be)
+* Entry. A code entry.
+* Extern. A "extern" function defined in the program
+* ExternFn. A "extern" function that can be provided by the external world, but not defined in the program.
+* Termination. Indiciate the execution that the execution is finish.
 
-### Minimal Operation Set
+# Build and the program
 
-At any point of evaluation time, a set of values and a code point is specified. I have already talked about values. A code point is one of the following 3 cases:
+Run the following in a console:
+```sh
+git clone https://github.com/earthengine/lincoln
+cargo run
+```
+The program will show a prompt
 
-* An "Entry" code point refer to a specific instruction of the program (see the following for the types of instructions).
+```sh
+Lincoln> 
+```
+Now you can run some commands like
 
-* An "External" code point refer to a function to be provided by the outside world (usually, by the intepreter itself).
+```text
+entry: call entry1 1 from
+entry1: jmp count #!ba
+set export entry
+```
+You can use save command to save your work to a json file:
 
-* A "Termination" code point is a special one that notify the engine it should stop.
+```text
+save myprogram.json
+```
+Or load it back
 
-One or more code points can be combined in a group. A grouped code point can be used in branches.
+```text
+load myprogram.json
+```
+You can then compile the prog by 
 
-As an IR (like assembly languages), I only support 3 "instruction" type (type of `Entry`s):
+```text
+compile bint
+```
+where "bint" is a set of external functions for converting from and to a number data type defined in pure Lincoln. 
 
-* Call. You can specify what to call, and where to return. (Unlike many assembly languages, you have to specify which piece of code is going to receive the result) The return position will be turned into a "Closure" value, accessable in the callee code. n
+There are also another set of external functions provided, which is "fact" that use the executer's native data type.
 
-* Jump. You can use Jump to organise arguments, and then sent them to a new code point. A specified "permutation" is used to define how the arguments should be prepred for the jump.
+To run the program, use
+```
+run entry 0 10
+```
+and get something like:
 
-* Return. You pick the first value from the context as the return position, also a variation index to specify the actual entry to be returned to.
+```text
+Result(1/1): 10
+```
 
-### Turing completness
+# Examples
+Two example programs are given
 
-The above description of Lincoln have one missed point: you can easily see how sequential execution can be done and I explicitly said conditional execution is done through `Group` code point. But how about recursion/loops?
+## bint.json
+This is a demostration of how to define copiable native data type. To run, use the following commands:
 
-First of all, using `External` everyting can be done. As all code references are in `Call` and `Jump` or `Group`, you can also create loops by refering an earlier code point. However, if we disallow reference loops in those (which is easy to enforce), we will have a system that is Turing incomplete: it is provable that the number of execution steps is finite betwee two calls to `External` code points (it is exponential to the number of entries however). This means a Turing machine that is garantee to stop.
+```text
+load bint.json
+compile bint
+run entry 0 "10"
+```
+You are expected to get
+```text
+Result(1/2): 10
+Result(2/2): 10
+```
 
-This is sometimes a desirable feature! So the ability to create loops will be an optional feature.
+## fact.json
+This is a demostration of how to define algorithm completely rely on the outside world to provide the functions we need.
 
+To run, use the following commands:
 
+```text
+load fact.json
+compile fact
+run entry 0 "10"
+```
+You are expected to get
+```text
+Result(1/1): 3628800
+```
 
+# Future development
+We have a lot to do
+
+* Seperate the core engine into a lib module, making it independent to the external function sets.
+* Introduce a type system and make the human input language easier to use.
+* Instead of interpreting, compile it to another language or binary. One potential target is Webassembly.
+* Futher examples to come!
+
+# Contact me!
+
+If you are interested in this project, please feel free to contact me through 
+
+* https://www.linkedin.com/in/zhiyu-ren-51a48620/
+
+Or just raise an issue if you don't care it to be public.

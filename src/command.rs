@@ -210,7 +210,7 @@ impl CommandContext {
         pm.set_export(exportlabel)?;
         Ok(true)
     }
-    fn showprog(&mut self, c: Captures) -> Result<bool, Error> {
+    fn showprog(&mut self, _c: Captures) -> Result<bool, Error> {
         let pm = self.program();
         println!("{}", pm);
         Ok(true)
@@ -334,7 +334,7 @@ impl CommandContext {
 
         Ok(true)
     }
-    fn step(&mut self, c: Captures) -> Result<bool, Error> {
+    fn step(&mut self, _c: Captures) -> Result<bool, Error> {
         use CommandContext::*;
         let (program, compiled, context, current, round) = match self {
             Stepping {
