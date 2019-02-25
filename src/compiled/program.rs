@@ -84,44 +84,6 @@ impl std::fmt::Debug for ExportEntry {
     }
 }
 
-#[derive(Serialize, Default)]
-pub struct Program {
-    pub entries: Vec<Entry>,
-    pub externs: Vec<ExternEntry>,
-    pub exports: Vec<ExportEntry>,
-    pub groups: Vec<CodeGroup>,
-}
-impl std::fmt::Debug for Program {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        writeln!(fmt, "\nentries:")?;
-        for (idx, entry) in self.entries.iter().enumerate() {
-            writeln!(fmt, "\t#{}: {:?}", idx, entry)?;
-        }
-        writeln!(fmt, "externs:")?;
-        for (idx, ext) in self.externs.iter().enumerate() {
-            writeln!(fmt, "\t@{}: {:?}", idx, ext)?;
-        }
-        writeln!(fmt, "exports:")?;
-        for ext in self.exports.iter() {
-            writeln!(fmt, "\t{:?}", ext)?;
-        }
-        writeln!(fmt, "groups:")?;
-        let grps = self.groups.iter();
-        for (idx, grp) in grps.enumerate() {
-            write!(fmt, "\t%{}: [", idx)?;
-            let mut grp1 = grp.iter();
-            if let Some(ent) = grp1.next() {
-                write!(fmt, "{:?}", ent)?;
-            }
-            for ent in grp1 {
-                write!(fmt, ", {:?}", ent)?;
-            }
-            writeln!(fmt, "]")?;
-        }
-        writeln!(fmt, "")
-    }
-}
-
 #[derive(Serialize)]
 pub enum Entry {
     Jump {
@@ -170,6 +132,43 @@ impl std::fmt::Debug for Entry {
     }
 }
 
+#[derive(Serialize, Default)]
+pub struct Program {
+    pub entries: Vec<Entry>,
+    pub externs: Vec<ExternEntry>,
+    pub exports: Vec<ExportEntry>,
+    pub groups: Vec<CodeGroup>,
+}
+impl std::fmt::Debug for Program {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        writeln!(fmt, "\nentries:")?;
+        for (idx, entry) in self.entries.iter().enumerate() {
+            writeln!(fmt, "\t#{}: {:?}", idx, entry)?;
+        }
+        writeln!(fmt, "externs:")?;
+        for (idx, ext) in self.externs.iter().enumerate() {
+            writeln!(fmt, "\t@{}: {:?}", idx, ext)?;
+        }
+        writeln!(fmt, "exports:")?;
+        for ext in self.exports.iter() {
+            writeln!(fmt, "\t{:?}", ext)?;
+        }
+        writeln!(fmt, "groups:")?;
+        let grps = self.groups.iter();
+        for (idx, grp) in grps.enumerate() {
+            write!(fmt, "\t%{}: [", idx)?;
+            let mut grp1 = grp.iter();
+            if let Some(ent) = grp1.next() {
+                write!(fmt, "{:?}", ent)?;
+            }
+            for ent in grp1 {
+                write!(fmt, ", {:?}", ent)?;
+            }
+            writeln!(fmt, "]")?;
+        }
+        writeln!(fmt, "")
+    }
+}
 impl Program {
     pub fn add_extern(&mut self, ent: ExternEntry) -> CodeRef {
         let pos = ExternRef::new_coderef(self.externs.len());
@@ -261,7 +260,7 @@ impl Program {
                     Ok((*call, c1))
                 }
                 Some(Entry::Return { variant }) => {
-                    let v = ctx.pop_first()?;
+                    let v = ctx.pop()?;
                     v.eval(self, ctx, *variant)
                 }
                 _ => Err(ent.not_found()),

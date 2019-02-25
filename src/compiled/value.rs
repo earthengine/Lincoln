@@ -35,12 +35,6 @@ impl Context {
             Ok(())
         }
     }
-    pub fn pop_first(&mut self) -> Result<Value, Error> {
-        if self.len() == 0 {
-            bail!("Pop from empty")
-        }
-        Ok(self.0.swap_remove(0))
-    }
     pub fn append(self: &mut Self, other: &mut Self) {
         self.0.append(&mut other.0);
     }

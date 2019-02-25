@@ -47,8 +47,6 @@ pub fn commands() -> Regex {
         r#"(?P<runvariant>([1-9][0-9]*|0))\s+"(?P<value>[^"]*)"(\s+(?P<runstep>step))?)\s*$|"#,
         // step
         r#"^\s*(?P<step>step)\s*$|"#,
-        // test
-        r#"^\s*(?P<test>test)\s*$|"#,
         // empty line
         r#"^\s*(//.*)?\s*$|"#,
         // exit
@@ -257,20 +255,7 @@ impl CommandContext {
             }
         }
     }
-    fn test1(&mut self, _: Captures) -> Result<(), Error> {
-        let file = File::open("bint.json")?;
-        let mut p: PreCompileProgram = serde_json::from_reader(file)?;
 
-        p.set_export("entry")?;
-        let mut ctx: Context = Default::default();
-        ctx.push(Value::FinalReceiver(print));
-        ctx.push(Value::wrap(100usize));
-
-        let prog = p.compile(BINT_EXTERNS)?;
-        prog.run(ctx, "entry", 0, None)?;
-
-        Ok(())
-    }
     fn run(&mut self, c: Captures) -> Result<bool, Error> {
         use CommandContext::*;
         let entry = c
@@ -309,7 +294,7 @@ impl CommandContext {
         }
 
         if !step {
-            compiled.run(ctx, entry, variant, None)?;            
+            compiled.run(ctx, entry, variant, None)?;
         } else {
             let entry = compiled.get_export_ent(entry, variant)?;
             println!("{:?} {:?}", entry, ctx);
@@ -363,10 +348,6 @@ macro_rules! handle_cmd {
 }
 
 pub fn process(c: Captures, ctx: &mut CommandContext) -> Result<bool, Error> {
-    if let Some(_) = c.name("test") {
-        ctx.test1(c)?;
-        return Ok(true);
-    }
     handle_cmd!(showprog, c, ctx);
     handle_cmd!(showexternset, c, ctx);
     handle_cmd!(save, c, ctx);
@@ -390,56 +371,4 @@ pub fn process(c: Captures, ctx: &mut CommandContext) -> Result<bool, Error> {
 
 fn group_elements() -> Regex {
     Regex::new(r"\s+").unwrap()
-}
-
-fn _test(pm: &mut PreCompileProgram) -> Result<(), Error> {
-    let _ = pm.define_call("fact", "fact1", 2, "fact19")?; //fact c n => fact1 c n fact_rec
-    let _ = pm.define_call("fact1", "fact2", 3, "zero")?; //fact1 c n f => fact2 c n f zero
-
-    let _ = pm.define_jmp("fact2", "fact3", "ba")?; //fact2 c n f z => fact3 n c f z
-    let _ = pm.define_call("fact3", "copy_int", 1, "fact4")?; //fact3 n c f z => copy_int n (fact4 c f z)
-
-    let _ = pm.define_jmp("fact4", "fact5", "aecdb")?; //fact4 n m c f z => fact5 n z c f m
-    let _ = pm.define_call("fact5", "eq", 2, "fact6")?; //fact5 n z c f m => eq n z (fact6 c f m)
-
-    let _ = pm.define_group("fact6", &["fact7", "fact11"])?; //fact6 => true: fact7, false: fact12
-
-    let _ = pm.define_jmp("fact7", "fact8", "cba")?; //fact7 c f n => fact8 n f c
-    let _ = pm.define_call("fact8", "drop_int", 1, "fact9")?; //fact8 n f c => drop n (fact9 f c)
-
-    let _ = pm.define_call("fact9", "fact21", 1, "fact10")?; //fact9 f c => drop f (fact10 c)
-
-    let _ = pm.define_call("fact10", "fact20", 1, "one")?; //fact10 c => fact11 c one
-
-    let _ = pm.define_call("fact11", "fact12", 3, "one")?; //fact12 c f n => fact13 c f n one
-
-    let _ = pm.define_jmp("fact12", "fact13", "cba")?; //fact13 c f n o => fact14 n f c o
-    let _ = pm.define_call("fact13", "copy_int", 1, "fact14")?; //fact14 n f c o => copy_int n (fact15 f c o)
-
-    let _ = pm.define_jmp("fact14", "fact15", "aecdb")?; //fact15 n m f c o => fact16 n o f c m
-    let _ = pm.define_call("fact15", "minus", 2, "fact16")?; //fact16 n o f c m => minus n o (fact17 f c m)
-
-    let _ = pm.define_jmp("fact16", "fact17", "ba")?; //fact17 n f c m => fact18 f n c m
-    let _ = pm.define_call("fact17", "fact20", 2, "fact18")?; //fact18 n c m => fact19 f n (fact20 c m)
-
-    let _ = pm.define_jmp("fact18", "mul", "acb")?; //fact20 n c m => mul m n c
-    let _ = pm.define_group("fact19", &["fact", "fact20"])?; //fact_rec => call: fact, drop: fact_rec1
-
-    let _ = pm.define_ret("fact20", 0)?; //fact11 c o => c o
-
-    let _ = pm.define_ret("fact21", 1)?; //fact23 f c => f.1 c
-
-    pm.set_export("fact")?;
-
-    let mut file = File::create("fact.json")?;
-    file.write_all(json!(pm).to_string().as_bytes())?;
-
-    let prog = pm.compile(FACT_EXTERNS)?;
-
-    let mut ctx: Context = Default::default();
-    ctx.push(Value::FinalReceiver(print));
-    ctx.push(Value::wrap(10usize));
-    let _ = prog.run(ctx, "fact", 0, None)?;
-
-    Ok(())
 }

@@ -366,6 +366,7 @@ impl PreCompileProgram {
                         if let Some(e) = externs.as_ref().iter().find(|e| (*e).name() == name) {
                             let e = (*e).clone();
                             let _ = coderef_map.insert(entryref, prog.add_extern(e));
+                            debug!("define extern {}", name);
                         } else {
                             bail!("Extern entry not found {}", name);
                         }
@@ -375,6 +376,7 @@ impl PreCompileProgram {
                             entryref,
                             prog.add_entry(PEntry::Return { variant: *variant }),
                         );
+                        debug!("define return {}", self.find_name(entryref.index)?);
                     }
                     Entry::Jmp { cont, per } => {
                         let cont = *coderef_map.get(&cont).ok_or(format_err!(
@@ -384,6 +386,7 @@ impl PreCompileProgram {
                         ))?;
                         let _ = coderef_map
                             .insert(entryref, prog.add_entry(PEntry::Jump { cont, per: *per }));
+                        debug!("define jump {}", self.find_name(entryref.index)?);
                     }
                     Entry::Call {
                         callee,
@@ -404,6 +407,7 @@ impl PreCompileProgram {
                                         cont: *cont,
                                     }),
                                 );
+                                debug!("define call {}", self.find_name(entryref.index)?);
                             }
                             None => {
                                 let grp = prog.add_empty_group();
@@ -419,10 +423,12 @@ impl PreCompileProgram {
                                         cont: grp,
                                     }),
                                 );
+                                debug!("define call {} for group", self.find_name(entryref.index)?);
                             }
                         }
                     }
                     Entry::Group { elements } => {
+                        debug!("defining group {}...", self.find_name(entryref.index)?);
                         let grp = if let Some(grp) = groupdef_map.get(&entryref) {
                             debug!("group inserted {:?}", grp);
                             *grp
@@ -445,15 +451,24 @@ impl PreCompileProgram {
         }
         for export in self.exports.iter() {
             let name = export.clone();
-            let ent = self.defined_ent.get(export).expect("Invalid export");
+            let ent = self
+                .defined_ent
+                .get(export)
+                .ok_or(format_err!("Invalid export"))?;
             match ent.access(self) {
                 Some(Entry::Group { .. }) => {
-                    let grp = groupdef_map.get(ent).expect("group not found");
+                    let grp = groupdef_map
+                        .get(ent)
+                        .ok_or(format_err!("group not found"))?;
                     prog.exports.push(ExportEntry { name, g: *grp })
                 }
                 _ => {
                     let grp = prog.add_empty_group();
-                    let ent = coderef_map.get(ent).expect("entry not found");
+                    let ent = coderef_map.get(ent).ok_or(format_err!(
+                        "entry not found {}({})",
+                        ent,
+                        export
+                    ))?;
                     prog.add_group_entry(grp, *ent)?;
                     prog.exports.push(ExportEntry { name, g: grp })
                 }
