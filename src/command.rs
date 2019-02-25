@@ -49,6 +49,8 @@ pub fn commands() -> Regex {
         r#"^\s*(?P<step>step)\s*$|"#,
         // test
         r#"^\s*(?P<test>test)\s*$|"#,
+        // empty line
+        r#"^\s*(//.*)?\s*$|"#,
         // exit
         r#"^\s*(?P<exit>exit)\s*$"#,
     ))
@@ -110,11 +112,7 @@ fn prompt_and_ask(prompt: impl AsRef<str>) -> Result<bool, Error> {
     println!("{}", prompt.as_ref());
     let mut line = "".into();
     let _ = std::io::stdin().read_line(&mut line)?;
-    if line.trim() != "Y" && line.trim() != "y" {
-        return Ok(true);
-    } else {
-        return Ok(false);
-    }
+    Ok(line.trim() == "Y" || line.trim() == "y")
 }
 impl CommandContext {
     fn program(&self) -> &PreCompileProgram {
@@ -130,19 +128,19 @@ impl CommandContext {
         }
     }
     fn save(&mut self, c: Captures) -> Result<bool, Error> {
-        let filename = dbg!(c
+        let filename = c
             .name("savefilename")
             .expect("savefilename is none")
             .as_str()
-            .trim());
+            .trim();
         if let Ok(..) = std::fs::metadata(filename) {
-            if prompt_and_ask(format!("{} is already exist. override?", filename))? {
+            if !prompt_and_ask(format!("{} is already exist. override?", filename))? {
                 return Ok(true);
             }
         }
         let mut file = File::create(filename)?;
         file.write_all(json!(self.program()).to_string().as_bytes())?;
-        println!("saved!");
+        println!("saved to {}!", filename);
         Ok(true)
     }
     fn load(&mut self, c: Captures) -> Result<bool, Error> {
@@ -247,7 +245,7 @@ impl CommandContext {
             Stepping {
                 ref mut program, ..
             } => {
-                if prompt_and_ask("You are in stepping mode. Quit?")? {
+                if !prompt_and_ask("You are in stepping mode. Quit?")? {
                     let program = std::mem::replace(program, Default::default());
                     let compiled = program.compile(externs)?;
                     *self = Idle {
@@ -310,24 +308,20 @@ impl CommandContext {
             return Ok(true);
         }
 
-        let program = std::mem::replace(program, Default::default());
-        let compiled = std::mem::replace(compiled, Default::default());
-        *self = if !step {
-            compiled.run(ctx, entry, variant, None)?;
-            Idle {
-                program,
-                compiled: Some(compiled),
-            }
+        if !step {
+            compiled.run(ctx, entry, variant, None)?;            
         } else {
             let entry = compiled.get_export_ent(entry, variant)?;
             println!("{:?} {:?}", entry, ctx);
-            Stepping {
+            let program = std::mem::replace(program, Default::default());
+            let compiled = std::mem::replace(compiled, Default::default());
+            *self = Stepping {
                 program,
                 compiled,
                 current: entry,
                 context: ctx,
                 round: 1,
-            }
+            };
         };
 
         Ok(true)

@@ -137,7 +137,7 @@ impl Value {
         match self {
             Value::Closure(gr, mut ctx1) => {
                 ctx.append(&mut ctx1);
-                if variant as usize > gr.len() {
+                if variant as usize >= gr.len() {
                     bail!("variant out of bound {}/{}", variant, gr.len())
                 }
                 Ok((gr[variant as usize], ctx))
