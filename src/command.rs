@@ -137,7 +137,7 @@ impl CommandContext {
             }
         }
         let mut file = File::create(filename)?;
-        file.write_all(json!(self.program()).to_string().as_bytes())?;
+        file.write_all(serde_json::to_string_pretty(&json!(self.program()))?.as_bytes())?;
         println!("saved to {}!", filename);
         Ok(true)
     }
@@ -267,15 +267,14 @@ impl CommandContext {
             .expect("runvariant is none")
             .as_str()
             .parse::<u8>()?;
-        let value = c
-            .name("value")
-            .expect("value is none")
-            .as_str()
-            .parse::<usize>()?;
+        let values = c.name("value").expect("value is none").as_str();
+        let values = Value::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
         let mut ctx: Context = Default::default();
         ctx.push(Value::FinalReceiver(print));
-        ctx.push(Value::wrap(value));
+        for value in values {
+            ctx.push(value);
+        }
         let (program, compiled, is_stepping) = match self {
             Idle { compiled: None, .. } => {
                 bail!("Program is not compiled. Please compile it first (use compile command)")

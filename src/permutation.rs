@@ -162,7 +162,5 @@ mod test {
         assert_eq!(v, [3, 1, 2, 4]);
         Permutation(4).permutate(&mut v); //swap(0,3)
         assert_eq!(v, [3, 2, 1, 4]);
-
-        //assert_eq!(Permutation::swap(1, 2), Permutation(11));
     }
 }
