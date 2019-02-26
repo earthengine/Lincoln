@@ -1,4 +1,5 @@
-use crate::program::{CodeGroup, Entry, EvalFn, ExternEntry, Program};
+use crate::entries::{CodeGroup, Entry, EvalFn, ExternEntry};
+use crate::program::{Program};
 use crate::value::{Context, Value};
 use lincoln_common::traits::Access;
 use failure::Error;

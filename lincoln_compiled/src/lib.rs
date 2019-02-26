@@ -1,12 +1,20 @@
+#![deny(bare_trait_objects)]
 #[macro_use] extern crate serde_derive;
 #[macro_use] extern crate failure;
 #[macro_use] extern crate smallvec;
 #[macro_use] extern crate log;
 
-pub mod coderef;
-pub mod program;
-pub mod value;
-pub mod permutation;
+mod coderef;
+mod program;
+mod value;
+mod permutation;
+mod entries;
+
+pub use value::{Context, Value};
+pub use coderef::{CodeRef, GroupRef};
+pub use entries::ExternEntry;
+pub use program::Program;
+pub use permutation::{AsPermutation, Permutation};
 
 #[cfg(test)]
 mod tests {

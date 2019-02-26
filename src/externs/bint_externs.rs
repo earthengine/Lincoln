@@ -1,7 +1,7 @@
-use lincoln_compiled::value::Context;
-use lincoln_compiled::value::Value;
-use lincoln_compiled::coderef::CodeRef;
-use lincoln_compiled::program::ExternEntry;
+use lincoln_compiled::Context;
+use lincoln_compiled::Value;
+use lincoln_compiled::CodeRef;
+use lincoln_compiled::ExternEntry;
 
 eval_fn_untyped!(_from(p, c), 2, [v, cont], {
     let v = v.unwrap::<usize>(p)?;
@@ -65,13 +65,13 @@ eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
 eval_fn_untyped!(_count(p, c), 2, [cont, v], {
     debug!("count ");
 
-    let mut ctx: lincoln_compiled::value::Context = Default::default();
+    let mut ctx: lincoln_compiled::Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
         &[
-            lincoln_compiled::coderef::CodeRef::ExternFn("onzero", _onzero),
-            lincoln_compiled::coderef::CodeRef::ExternFn("onodd", _onodd),
-            lincoln_compiled::coderef::CodeRef::ExternFn("oneven", _oneven),
+            CodeRef::ExternFn("onzero", _onzero),
+            CodeRef::ExternFn("onodd", _onodd),
+            CodeRef::ExternFn("oneven", _oneven),
         ],
         ctx,
     );

@@ -1,5 +1,5 @@
-use lincoln_compiled::program::ExternEntry;
-use lincoln_compiled::value::Value;
+use lincoln_compiled::ExternEntry;
+use lincoln_compiled::Value;
 
 eval_fn!(_eq(p, c), 3, cont, [n1, n2]:[usize,usize], {
     debug!("{}=={}: {}", n2, n1, n2 == n1);

@@ -1,6 +1,6 @@
-use lincoln_compiled::coderef::CodeRef;
-use lincoln_compiled::program::Program;
-use lincoln_compiled::value::{Context, Value};
+use lincoln_compiled::CodeRef;
+use lincoln_compiled::Program;
+use lincoln_compiled::{Context, Value};
 use crate::externs::bint_externs::BINT_EXTERNS;
 use crate::externs::fact_externs::FACT_EXTERNS;
 use crate::externs::print;

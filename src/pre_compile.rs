@@ -1,6 +1,5 @@
-use lincoln_compiled::coderef::GroupRef;
-use lincoln_compiled::program::{Entry as PEntry, ExportEntry, ExternEntry, Program};
-use lincoln_compiled::permutation::{AsPermutation,Permutation};
+use lincoln_compiled::{GroupRef, ExternEntry, Program, Permutation, AsPermutation};
+//use lincoln_compiled::{Entry as PEntry, ExportEntry};
 use lincoln_common::traits::Access;
 use lincoln_common::traits::StringLike;
 use core::fmt::{Debug, Display, Formatter};
@@ -383,7 +382,7 @@ impl PreCompileProgram {
                     Entry::Ret { variant } => {
                         let _ = coderef_map.insert(
                             entryref,
-                            prog.add_entry(PEntry::Return { variant: *variant }),
+                            prog.add_return(*variant),
                         );
                         debug!("define return {}", self.find_name(entryref.index)?);
                     }
@@ -395,7 +394,7 @@ impl PreCompileProgram {
                             self.find_name(entryref.index)?
                         ))?;
                         let _ = coderef_map
-                            .insert(entryref, prog.add_entry(PEntry::Jump { cont, per: *per }));
+                            .insert(entryref, prog.add_jump(cont, *per));
                         debug!("define jump {}", self.find_name(entryref.index)?);
                     }
                     Entry::Call {
@@ -411,11 +410,11 @@ impl PreCompileProgram {
                             Some(cont) => {
                                 let _ = coderef_map.insert(
                                     entryref,
-                                    prog.add_entry(PEntry::Call {
+                                    prog.add_call(
                                         call,
-                                        num_args: *callcnt,
-                                        cont: *cont,
-                                    }),
+                                        *callcnt,
+                                        *cont,
+                                    ),
                                 );
                                 debug!("define call {}", self.find_name(entryref.index)?);
                             }
@@ -427,11 +426,11 @@ impl PreCompileProgram {
                                 }
                                 let _ = coderef_map.insert(
                                     entryref,
-                                    prog.add_entry(PEntry::Call {
+                                    prog.add_call(
                                         call,
-                                        num_args: *callcnt,
-                                        cont: grp,
-                                    }),
+                                        *callcnt,
+                                        grp,
+                                    ),
                                 );
                                 debug!("define call {} for group", self.find_name(entryref.index)?);
                             }
@@ -470,7 +469,7 @@ impl PreCompileProgram {
                     let grp = groupdef_map
                         .get(ent)
                         .ok_or(format_err!("group not found"))?;
-                    prog.exports.push(ExportEntry { name, g: *grp })
+                    prog.add_export(name, *grp)
                 }
                 _ => {
                     let grp = prog.add_empty_group();
@@ -480,7 +479,7 @@ impl PreCompileProgram {
                         export
                     ))?;
                     prog.add_group_entry(grp, *ent)?;
-                    prog.exports.push(ExportEntry { name, g: grp })
+                    prog.add_export(name, grp)
                 }
             }
         }

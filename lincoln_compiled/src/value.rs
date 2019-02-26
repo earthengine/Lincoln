@@ -1,5 +1,6 @@
 use crate::coderef::{CodeRef, GroupRef};
-use crate::program::{EvalFn, ExternEntry, Program};
+use crate::entries::{EvalFn, ExternEntry};
+use crate::program::Program;
 use crate::permutation::Permutation;
 use lincoln_common::traits::{Access, AnyDebug};
 use core::fmt::Debug;
