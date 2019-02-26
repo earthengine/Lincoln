@@ -13,5 +13,6 @@ serde_json="*"
 failure="*"
 failure_derive="*"
 regex="*"
-smallvec={ version="*", features=["serde"]}
 rustyline="*"
+lincoln_common={path="lincoln_common"}
+lincoln_compiled={path="lincoln_compiled"}

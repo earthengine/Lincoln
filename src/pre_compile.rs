@@ -1,8 +1,8 @@
-use crate::compiled::coderef::GroupRef;
-use crate::compiled::program::{Entry as PEntry, ExportEntry, ExternEntry, Program};
-use crate::permutation::Permutation;
-use crate::traits::Access;
-use crate::traits::{AsPermutation, StringLike};
+use lincoln_compiled::coderef::GroupRef;
+use lincoln_compiled::program::{Entry as PEntry, ExportEntry, ExternEntry, Program};
+use lincoln_compiled::permutation::{AsPermutation,Permutation};
+use lincoln_common::traits::Access;
+use lincoln_common::traits::StringLike;
 use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
 use std::collections::{BTreeMap, BTreeSet};

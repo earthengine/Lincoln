@@ -168,12 +168,30 @@ dependencies = [
  "env_logger 0.6.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lincoln_common 0.1.0",
+ "lincoln_compiled 0.1.0",
  "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rustyline 3.0.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_derive 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde_json 1.0.38 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "lincoln_common"
+version = "0.1.0"
+
+[[package]]
+name = "lincoln_compiled"
+version = "0.1.0"
+dependencies = [
+ "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
+ "lincoln_common 0.1.0",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_derive 1.0.88 (registry+https://github.com/rust-lang/crates.io-index)",
  "smallvec 0.6.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 

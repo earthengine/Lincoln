@@ -1,11 +1,13 @@
-use crate::compiled::program::ExternEntry;
-use crate::compiled::value::Value;
+use lincoln_compiled::value::Context;
+use lincoln_compiled::value::Value;
+use lincoln_compiled::coderef::CodeRef;
+use lincoln_compiled::program::ExternEntry;
 
 eval_fn_untyped!(_from(p, c), 2, [v, cont], {
     let v = v.unwrap::<usize>(p)?;
     debug!("from {}", v);
-    let mut ctx: crate::compiled::value::Context = Default::default();
-    let from1 = crate::compiled::coderef::CodeRef::ExternFn("from", _from);
+    let mut ctx: Context = Default::default();
+    let from1 = CodeRef::ExternFn("from", _from);
     if v == 0 {
         cont.eval(p, c, 0)
     } else if v % 2 == 1 {
@@ -29,10 +31,10 @@ eval_fn!(_onodd_result(p, c), 2, cont, [v]: [usize], {
     cont.eval(p, c, 0)
 });
 eval_fn_untyped!(_onodd(p, c), 2, [cont, v], {
-    let mut ctx: crate::compiled::value::Context = Default::default();
+    let mut ctx: Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
-        &[crate::compiled::coderef::CodeRef::ExternFn(
+        &[CodeRef::ExternFn(
             "onodd_result",
             _onodd_result,
         )],
@@ -47,10 +49,10 @@ eval_fn!(_oneven_result(p, c), 2, cont, [v]: [usize], {
     cont.eval(p, c, 0)
 });
 eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
-    let mut ctx: crate::compiled::value::Context = Default::default();
+    let mut ctx: Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
-        &[crate::compiled::coderef::CodeRef::ExternFn(
+        &[CodeRef::ExternFn(
             "oneven_result",
             _oneven_result,
         )],
@@ -63,13 +65,13 @@ eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
 eval_fn_untyped!(_count(p, c), 2, [cont, v], {
     debug!("count ");
 
-    let mut ctx: crate::compiled::value::Context = Default::default();
+    let mut ctx: lincoln_compiled::value::Context = Default::default();
     ctx.push(cont);
     let closure = Value::closure(
         &[
-            crate::compiled::coderef::CodeRef::ExternFn("onzero", _onzero),
-            crate::compiled::coderef::CodeRef::ExternFn("onodd", _onodd),
-            crate::compiled::coderef::CodeRef::ExternFn("oneven", _oneven),
+            lincoln_compiled::coderef::CodeRef::ExternFn("onzero", _onzero),
+            lincoln_compiled::coderef::CodeRef::ExternFn("onodd", _onodd),
+            lincoln_compiled::coderef::CodeRef::ExternFn("oneven", _oneven),
         ],
         ctx,
     );

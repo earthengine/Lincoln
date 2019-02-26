@@ -1,6 +1,6 @@
-use crate::compiled::program::{CodeGroup, Entry, EvalFn, ExternEntry, Program};
-use crate::compiled::value::{Context, Value};
-use crate::traits::Access;
+use crate::program::{CodeGroup, Entry, EvalFn, ExternEntry, Program};
+use crate::value::{Context, Value};
+use lincoln_common::traits::Access;
 use failure::Error;
 
 #[derive(Copy, Clone, Serialize)]

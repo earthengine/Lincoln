@@ -1,7 +1,7 @@
-use crate::compiled::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
-use crate::compiled::value::{Context, Value};
+use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
+use crate::value::{Context, Value};
 use crate::permutation::Permutation;
-use crate::traits::{Access, StringLike};
+use lincoln_common::traits::{Access, StringLike};
 use core::hash::{Hash, Hasher};
 use failure::Error;
 use smallvec::SmallVec;

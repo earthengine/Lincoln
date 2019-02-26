@@ -1,7 +1,10 @@
-use crate::traits::{AsPermutation, StringLike};
 use core::fmt::{Display, Error, Formatter};
 use core::str::FromStr;
 use smallvec::SmallVec;
+
+pub trait AsPermutation {
+    fn as_permutation(&self) -> Result<Permutation, failure::Error>;
+}
 
 pub const FACTS: [u64; 20] = [
     1,
@@ -47,7 +50,7 @@ impl From<&Permutation> for String {
 }
 impl<T> AsPermutation for T
 where
-    T: StringLike,
+    T: AsRef<str>,
 {
     fn as_permutation(&self) -> Result<Permutation, failure::Error> {
         Permutation::from_str(self.as_ref())

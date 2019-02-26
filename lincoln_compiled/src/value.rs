@@ -1,7 +1,7 @@
-use crate::compiled::coderef::{CodeRef, GroupRef};
-use crate::compiled::program::{EvalFn, ExternEntry, Program};
+use crate::coderef::{CodeRef, GroupRef};
+use crate::program::{EvalFn, ExternEntry, Program};
 use crate::permutation::Permutation;
-use crate::traits::{Access, AnyDebug};
+use lincoln_common::traits::{Access, AnyDebug};
 use core::fmt::Debug;
 use failure::Error;
 use regex::Regex;

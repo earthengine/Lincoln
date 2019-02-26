@@ -5,9 +5,9 @@
 ///
 macro_rules! value {
     ($name:expr, $exp:expr) => {
-        ExternEntry::Value {
+        lincoln_compiled::program::ExternEntry::Value {
             name: $name,
-            value: || Value::wrap($exp),
+            value: || lincoln_compiled::value::Value::wrap($exp),
         }
     };
 }
@@ -63,12 +63,12 @@ macro_rules! var_pop {
 macro_rules! eval_fn {
     ($name:ident($prog:ident, $ctx:ident), $varcnt:expr, $cont:ident, [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
         pub fn $name(
-            $prog: &crate::compiled::program::Program,
-            mut $ctx: crate::compiled::value::Context,
+            $prog: &lincoln_compiled::program::Program,
+            mut $ctx: lincoln_compiled::value::Context,
         ) -> Result<
             (
-                crate::compiled::coderef::CodeRef,
-                crate::compiled::value::Context,
+                lincoln_compiled::coderef::CodeRef,
+                lincoln_compiled::value::Context,
             ),
             failure::Error,
         > {
@@ -93,9 +93,9 @@ macro_rules! eval_fn {
 macro_rules! eval_fn_untyped {
     ($name:ident($prog:ident, $ctx:ident), $varcnt:expr, [$($var:ident),*], $blk:block) => {
         pub fn $name(
-            $prog: &crate::compiled::program::Program,
-            mut $ctx: crate::compiled::value::Context,
-        ) -> Result<(crate::compiled::coderef::CodeRef, crate::compiled::value::Context), failure::Error> {
+            $prog: &lincoln_compiled::program::Program,
+            mut $ctx: lincoln_compiled::value::Context,
+        ) -> Result<(lincoln_compiled::coderef::CodeRef, lincoln_compiled::value::Context), failure::Error> {
             $ctx.expect_args($varcnt)?;
             var_pop!($ctx,[$($var),*]);
 
@@ -116,13 +116,13 @@ macro_rules! eval_fn_untyped {
 ///
 macro_rules! eval_fn_term {
     ($name:ident($prog:ident,$ctx:ident), [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
-pub fn $name($prog: &crate::compiled::program::Program, mut $ctx: crate::compiled::value::Context) ->
-    Result<(crate::compiled::coderef::CodeRef, crate::compiled::value::Context), failure::Error>
+pub fn $name($prog: &lincoln_compiled::program::Program, mut $ctx: lincoln_compiled::value::Context) ->
+    Result<(lincoln_compiled::coderef::CodeRef, lincoln_compiled::value::Context), failure::Error>
 {
     var_unwrap!($ctx,$prog,[$($var),*]:[$($typ),*]);
 
     $blk
-    Ok((crate::compiled::coderef::CodeRef::Termination, $ctx))
+    Ok((lincoln_compiled::coderef::CodeRef::Termination, $ctx))
 }
     };
 }
@@ -133,7 +133,7 @@ pub fn $name($prog: &crate::compiled::program::Program, mut $ctx: crate::compile
 /// eval: the function or closure
 macro_rules! eval {
     ($name:expr, $eval:expr) => {
-        ExternEntry::Eval {
+        lincoln_compiled::program::ExternEntry::Eval {
             name: $name,
             eval: $eval,
         }

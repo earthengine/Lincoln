@@ -1,11 +1,11 @@
-use crate::compiled::coderef::CodeRef;
-use crate::compiled::program::Program;
-use crate::compiled::value::{Context, Value};
+use lincoln_compiled::coderef::CodeRef;
+use lincoln_compiled::program::Program;
+use lincoln_compiled::value::{Context, Value};
 use crate::externs::bint_externs::BINT_EXTERNS;
 use crate::externs::fact_externs::FACT_EXTERNS;
 use crate::externs::print;
 use crate::pre_compile::PreCompileProgram;
-use crate::traits::Access;
+use lincoln_common::traits::Access;
 use core::fmt::{Display, Formatter};
 use failure::Error;
 use regex::{Captures, Regex};

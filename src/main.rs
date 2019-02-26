@@ -10,15 +10,10 @@ extern crate serde_json;
 #[macro_use]
 extern crate failure;
 extern crate regex;
-#[macro_use]
-extern crate smallvec;
 
 pub mod command;
-pub mod compiled;
 pub mod externs;
-pub mod permutation;
 pub mod pre_compile;
-pub mod traits;
 
 use crate::command::{commands, process, CommandContext};
 use failure::Error;

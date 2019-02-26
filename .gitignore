@@ -1,2 +1,6 @@
 /target
 **/*.rs.bk
+lincoln_common/target
+lincoln_compiled/target
+lincoln_compiled/Cargo.lock
+lincoln_common/Cargo.lock

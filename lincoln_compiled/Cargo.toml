@@ -1,0 +1,14 @@
+[package]
+name = "lincoln_compiled"
+version = "0.1.0"
+authors = ["Joe Ren <earthengine@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+log="*"
+failure="*"
+smallvec={ version="*", features=["serde"]}
+serde="*"
+serde_derive="*"
+regex="*"
+lincoln_common={path="../lincoln_common", version="*"}
