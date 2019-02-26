@@ -105,9 +105,11 @@ This is a demostration of how to define copiable native data type. To run, use t
 ```text
 load bint.json
 compile bint
-run entry 0 "10"
+run test_copy 0 "10usize"
 ```
-You are expected to get
+Right now only "usize" type are supported, it is usually a 64 bit unsigned integer according to your system.
+
+By running this you are expected to get
 ```text
 Result(1/2): 10
 Result(2/2): 10
@@ -121,7 +123,7 @@ To run, use the following commands:
 ```text
 load fact.json
 compile fact
-run entry 0 "10"
+run fact 0 "10usize"
 ```
 You are expected to get
 ```text

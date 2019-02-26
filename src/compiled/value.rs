@@ -4,6 +4,7 @@ use crate::permutation::Permutation;
 use crate::traits::{Access, AnyDebug};
 use core::fmt::Debug;
 use failure::Error;
+use regex::Regex;
 use smallvec::SmallVec;
 
 use std::any::Any;
@@ -142,5 +143,18 @@ impl Value {
             }
             _ => bail!("Not a closure"),
         }
+    }
+    pub fn parse_string(s: impl AsRef<str>) -> Result<SmallVec<[Self; 5]>, Error> {
+        let reg = Regex::new(",")?;
+        let us = Regex::new("(?P<value>[1-9]?[0-9]*|0)usize")?;
+        let mut r = smallvec![];
+        for m in reg.split(s.as_ref()) {
+            if let Some(capture) = us.captures(m) {
+                if let Some(value) = capture.name("value") {
+                    r.push(Value::wrap(value.as_str().parse::<usize>()?))
+                }
+            }
+        }
+        Ok(r)
     }
 }
