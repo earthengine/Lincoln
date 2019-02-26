@@ -355,6 +355,15 @@ impl PreCompileProgram {
         let mut coderef_map = BTreeMap::new();
         let mut groupdef_map: BTreeMap<EntryRef, GroupRef> = BTreeMap::new();
         let ds = self.dependency_sort();
+        let sorted = ds.iter().flat_map(|(_,e)| e).collect::<BTreeSet<&EntryRef>>();
+        if sorted.len()!=self.entries.len() {
+            error!("{} entries was found involved in a circular reference without groups (call conts).", 
+                self.entries.len()-sorted.len());
+            for v in self.entries.iter().enumerate().filter(|(i,_)| !sorted.contains(&EntryRef{index:*i})) {
+                error!("{}", self.find_name(v.0)?);
+            }
+            bail!("circular reference detected");
+        }
         for (level, entries) in ds {
             for entry in entries {
                 let entryref = entry;
@@ -380,9 +389,10 @@ impl PreCompileProgram {
                     }
                     Entry::Jmp { cont, per } => {
                         let cont = *coderef_map.get(&cont).ok_or(format_err!(
-                            "Dependency error: cont for Jmp is undefined: {}, {}",
+                            "Dependency error: cont for Jmp is undefined: {}, {}, {}",
                             cont,
-                            level
+                            level,
+                            self.find_name(entryref.index)?
                         ))?;
                         let _ = coderef_map
                             .insert(entryref, prog.add_entry(PEntry::Jump { cont, per: *per }));
