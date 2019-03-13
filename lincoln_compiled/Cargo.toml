@@ -5,10 +5,10 @@ authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
 
 [dependencies]
-log="*"
-failure="*"
-smallvec={ version="*", features=["serde"]}
-serde="*"
-serde_derive="*"
-regex="*"
-lincoln_common={path="../lincoln_common", version="*"}
+log="0.4"
+failure="0.1"
+smallvec={ version="0.6", features=["serde"]}
+serde="1.0"
+serde_derive="1.0"
+regex="1.1"
+lincoln_common={path="../lincoln_common", version="0.1"}

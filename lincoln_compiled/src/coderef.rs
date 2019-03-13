@@ -1,14 +1,20 @@
-use crate::entries::{CodeGroup, Entry, EvalFn, ExternEntry};
-use crate::program::{Program};
-use crate::value::{Context, Value};
-use lincoln_common::traits::Access;
+use crate::entries::{CodeGroup, Entry, ExternEntry};
+use crate::program::Program;
 use failure::Error;
+use lincoln_common::traits::Access;
 
-#[derive(Copy, Clone, Serialize)]
+/// CodeRef is a type refer to a single executable entry.
+/// This can be either a entry of a program, an external
+/// entry point defined within/without the program,
+/// or indicate the end of execution.
+///
+#[derive(Copy, Clone, Serialize, Deserialize)]
 pub enum CodeRef {
+    /// An entry refers to a entry point of a program.
     Entry(EntryRef),
+    /// Refers to an external function entry defined in a program.
     Extern(ExternRef),
-    ExternFn(&'static str, #[serde(skip_serializing)] EvalFn),
+    /// Indicate the end of execution.
     Termination,
 }
 impl std::hash::Hash for CodeRef {
@@ -20,10 +26,6 @@ impl std::hash::Hash for CodeRef {
         match self {
             Entry(e) => e.hash(state),
             Extern(e) => e.hash(state),
-            ExternFn(n, f) => {
-                n.hash(state);
-                (f as *const _ as *const ()).hash(state)
-            }
             _ => "".hash(state),
         }
     }
@@ -35,9 +37,6 @@ impl PartialEq for CodeRef {
         match (self, other) {
             (Entry(e1), Entry(e2)) => e1 == e2,
             (Extern(e1), Extern(e2)) => e1 == e2,
-            (ExternFn(n1, f1), ExternFn(n2, f2)) => {
-                n1 == n2 && f1 as *const _ as *const () == f2 as *const _ as *const ()
-            }
             (Termination, Termination) => true,
             _ => false,
         }
@@ -48,13 +47,18 @@ impl std::fmt::Debug for CodeRef {
         match self {
             CodeRef::Entry(e) => write!(fmt, "^{:?}", e),
             CodeRef::Extern(e) => write!(fmt, "^{:?}", e),
-            CodeRef::ExternFn(name, _) => write!(fmt, "^{}", name),
             CodeRef::Termination => write!(fmt, "^⟂"),
         }
     }
 }
 impl CodeRef {
-    pub fn get_index(&self) -> usize {
+    pub fn entry(index: usize) -> Self {
+        CodeRef::Entry(EntryRef(index))
+    }
+    pub fn ext(index: usize) -> Self {
+        CodeRef::Extern(ExternRef(index))
+    }
+    pub(crate) fn get_index(&self) -> usize {
         match self {
             CodeRef::Entry(ent) => ent.0,
             CodeRef::Extern(ExternRef(index)) => *index,
@@ -63,8 +67,9 @@ impl CodeRef {
     }
 }
 
-#[derive(Copy, Clone, Serialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct EntryRef(usize);
+/// An `EntryRef` refers to an entry of a program.
+#[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct EntryRef(pub usize);
 impl EntryRef {
     pub fn not_found(&self) -> Error {
         format_err!("entry not found: {}", self.0)
@@ -98,8 +103,9 @@ impl<'a> Access<'a, Program> for EntryRef {
     }
 }
 
-#[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
-pub struct ExternRef(usize);
+/// An `ExternRef` refers to an external entry defined in a program.
+#[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub struct ExternRef(pub usize);
 impl ExternRef {
     pub fn not_found(&self) -> Error {
         format_err!("extern reference not found {:?}", self)
@@ -133,6 +139,9 @@ impl<'a> Access<'a, Program> for ExternRef {
     }
 }
 
+/// A `GroupRef` refers to a group of `CodeRef`, used for
+/// `Entry::Call` to implement conditional control flow.
+///
 #[derive(Copy, Clone, Serialize, PartialEq, Eq, Hash)]
 pub struct GroupRef(usize);
 impl std::fmt::Debug for GroupRef {
@@ -141,10 +150,18 @@ impl std::fmt::Debug for GroupRef {
     }
 }
 impl GroupRef {
+    /// Create a new group reference
+    ///
     pub fn new(i: usize) -> GroupRef {
         GroupRef(i)
     }
-    pub fn as_entry_ref(self, p: &Program, idx: u8) -> Result<CodeRef, Error> {
+
+    /// From a program, retrive an entry from this group
+    ///
+    /// p: the program
+    /// idx: the index of the group entries
+    ///
+    pub fn get_entry(self, p: &Program, idx: u8) -> Result<CodeRef, Error> {
         let GroupRef(i) = self;
         let len = p.groups.len();
         if len <= i {
@@ -154,7 +171,7 @@ impl GroupRef {
             if g.len() <= idx as usize {
                 bail!("Variant out of range: given {}, max {}", idx, g.len())
             } else {
-                Ok(g[idx as usize])
+                Ok(g[idx as usize].clone())
             }
         }
     }
@@ -162,25 +179,18 @@ impl GroupRef {
         let GroupRef(i) = self;
         *i
     }
-    pub fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), Error> {
+    pub(crate) fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), Error> {
         let GroupRef(i) = self;
         if *i > p.groups.len() {
             bail!("Invalid group index {}", i)
         }
         Ok(p.groups[*i].push(c))
     }
-    pub fn get_vec(&self, p: &Program) -> Result<CodeGroup, Error> {
+    pub(crate) fn get_vec(&self, p: &Program) -> Result<CodeGroup, Error> {
         let GroupRef(i) = self;
         if *i > p.groups.len() {
             bail!("Invalid group index {}", i)
         }
         Ok(p.groups[*i].clone())
-    }
-    pub fn create_closure(&self, p: &Program, ctx: Context) -> Result<Value, Error> {
-        let GroupRef(i) = self;
-        if *i > p.groups.len() {
-            bail!("Invalid group index {}", i)
-        }
-        Ok(Value::closure(&p.groups[*i], ctx))
     }
 }

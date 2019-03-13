@@ -1,52 +1,52 @@
 {
   "defined_ent": {
     "add": {
-      "index": 32
-    },
-    "add1": {
       "index": 31
     },
+    "add1": {
+      "index": 30
+    },
     "add10": {
-      "index": 39
+      "index": 40
     },
     "add11": {
       "index": 45
     },
     "add12": {
-      "index": 40
+      "index": 41
     },
     "add13": {
       "index": 46
     },
     "add14": {
-      "index": 50
-    },
-    "add15": {
-      "index": 41
-    },
-    "add16": {
       "index": 47
     },
+    "add15": {
+      "index": 42
+    },
+    "add16": {
+      "index": 48
+    },
     "add17": {
-      "index": 51
+      "index": 49
     },
     "add18": {
-      "index": 52
+      "index": 50
     },
     "add19": {
       "index": 43
     },
     "add2": {
-      "index": 30
+      "index": 32
     },
     "add20": {
-      "index": 48
+      "index": 51
     },
     "add21": {
       "index": 44
     },
     "add22": {
-      "index": 49
+      "index": 52
     },
     "add23": {
       "index": 53
@@ -67,25 +67,25 @@
       "index": 35
     },
     "add7": {
-      "index": 37
-    },
-    "add8": {
       "index": 38
     },
+    "add8": {
+      "index": 37
+    },
     "add9": {
-      "index": 42
+      "index": 39
     },
     "copy": {
-      "index": 11
+      "index": 8
     },
     "copy1": {
-      "index": 10
+      "index": 7
     },
     "copy10": {
-      "index": 9
+      "index": 11
     },
     "copy11": {
-      "index": 14
+      "index": 17
     },
     "copy12": {
       "index": 18
@@ -97,46 +97,46 @@
       "index": 20
     },
     "copy2": {
-      "index": 7
+      "index": 9
     },
     "copy3": {
       "index": 12
     },
     "copy5": {
-      "index": 8
+      "index": 10
     },
     "copy6": {
       "index": 13
     },
     "copy7": {
-      "index": 15
+      "index": 14
     },
     "copy8": {
-      "index": 16
+      "index": 15
     },
     "copy9": {
-      "index": 17
+      "index": 16
     },
     "count": {
       "index": 60
     },
     "drop": {
-      "index": 21
-    },
-    "drop1": {
       "index": 22
     },
+    "drop1": {
+      "index": 21
+    },
     "from": {
-      "index": 57
+      "index": 56
     },
     "inc": {
-      "index": 25
-    },
-    "inc1": {
       "index": 24
     },
-    "inc2": {
+    "inc1": {
       "index": 23
+    },
+    "inc2": {
+      "index": 25
     },
     "inc3": {
       "index": 26
@@ -157,28 +157,28 @@
       "index": 5
     },
     "test_add": {
-      "index": 71
-    },
-    "test_add1": {
-      "index": 70
-    },
-    "test_add2": {
       "index": 69
     },
+    "test_add1": {
+      "index": 68
+    },
+    "test_add2": {
+      "index": 70
+    },
     "test_add3": {
-      "index": 72
+      "index": 71
     },
     "test_add4": {
-      "index": 73
+      "index": 72
     },
     "test_copy": {
-      "index": 58
+      "index": 57
     },
     "test_copy1": {
-      "index": 56
+      "index": 55
     },
     "test_copy2": {
-      "index": 55
+      "index": 58
     },
     "test_copy3": {
       "index": 59
@@ -189,23 +189,20 @@
     "test_copy5": {
       "index": 62
     },
-    "test_copy6": {
-      "index": 63
-    },
     "test_drop": {
-      "index": 65
-    },
-    "test_drop1": {
       "index": 64
     },
-    "test_inc": {
-      "index": 68
+    "test_drop1": {
+      "index": 63
     },
-    "test_inc1": {
+    "test_inc": {
       "index": 67
     },
-    "test_inc2": {
+    "test_inc1": {
       "index": 66
+    },
+    "test_inc2": {
+      "index": 65
     },
     "two": {
       "index": 2
@@ -272,6 +269,32 @@
       }
     },
     {
+      "Group": {
+        "elements": [
+          {
+            "index": 9
+          },
+          {
+            "index": 10
+          },
+          {
+            "index": 11
+          }
+        ]
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 7
+        },
+        "callee": {
+          "index": 3
+        }
+      }
+    },
+    {
       "Call": {
         "callcnt": 1,
         "callcont": {
@@ -289,7 +312,7 @@
           "index": 13
         },
         "callee": {
-          "index": 11
+          "index": 8
         }
       }
     },
@@ -297,36 +320,10 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 14
+          "index": 17
         },
         "callee": {
-          "index": 11
-        }
-      }
-    },
-    {
-      "Group": {
-        "elements": [
-          {
-            "index": 7
-          },
-          {
-            "index": 8
-          },
-          {
-            "index": 9
-          }
-        ]
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 10
-        },
-        "callee": {
-          "index": 3
+          "index": 8
         }
       }
     },
@@ -344,15 +341,7 @@
     {
       "Jmp": {
         "cont": {
-          "index": 15
-        },
-        "per": 2
-      }
-    },
-    {
-      "Jmp": {
-        "cont": {
-          "index": 18
+          "index": 14
         },
         "per": 2
       }
@@ -364,14 +353,14 @@
           "index": 5
         },
         "callee": {
-          "index": 16
+          "index": 15
         }
       }
     },
     {
       "Jmp": {
         "cont": {
-          "index": 17
+          "index": 16
         },
         "per": 4
       }
@@ -385,6 +374,14 @@
         "callee": {
           "index": 4
         }
+      }
+    },
+    {
+      "Jmp": {
+        "cont": {
+          "index": 18
+        },
+        "per": 2
       }
     },
     {
@@ -418,10 +415,25 @@
       }
     },
     {
+      "Group": {
+        "elements": [
+          {
+            "index": 0
+          },
+          {
+            "index": 22
+          },
+          {
+            "index": 22
+          }
+        ]
+      }
+    },
+    {
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 22
+          "index": 21
         },
         "callee": {
           "index": 3
@@ -429,18 +441,22 @@
       }
     },
     {
-      "Group": {
-        "elements": [
-          {
-            "index": 0
-          },
-          {
-            "index": 21
-          },
-          {
-            "index": 21
-          }
-        ]
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 25
+        },
+        "callee": {
+          "index": 3
+        }
+      }
+    },
+    {
+      "Jmp": {
+        "cont": {
+          "index": 23
+        },
+        "per": 1
       }
     },
     {
@@ -456,25 +472,6 @@
             "index": 28
           }
         ]
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 23
-        },
-        "callee": {
-          "index": 3
-        }
-      }
-    },
-    {
-      "Jmp": {
-        "cont": {
-          "index": 24
-        },
-        "per": 1
       }
     },
     {
@@ -508,11 +505,30 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 25
+          "index": 24
         },
         "callee": {
           "index": 5
         }
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 32
+        },
+        "callee": {
+          "index": 3
+        }
+      }
+    },
+    {
+      "Jmp": {
+        "cont": {
+          "index": 30
+        },
+        "per": 5
       }
     },
     {
@@ -528,25 +544,6 @@
             "index": 35
           }
         ]
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 30
-        },
-        "callee": {
-          "index": 3
-        }
-      }
-    },
-    {
-      "Jmp": {
-        "cont": {
-          "index": 31
-        },
-        "per": 5
       }
     },
     {
@@ -568,7 +565,7 @@
     {
       "Jmp": {
         "cont": {
-          "index": 37
+          "index": 38
         },
         "per": 1
       }
@@ -577,18 +574,7 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 38
-        },
-        "callee": {
-          "index": 3
-        }
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 42
+          "index": 37
         },
         "callee": {
           "index": 3
@@ -599,13 +585,39 @@
       "Group": {
         "elements": [
           {
-            "index": 39
-          },
-          {
             "index": 40
           },
           {
             "index": 41
+          },
+          {
+            "index": 42
+          }
+        ]
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 39
+        },
+        "callee": {
+          "index": 3
+        }
+      }
+    },
+    {
+      "Group": {
+        "elements": [
+          {
+            "index": 43
+          },
+          {
+            "index": 42
+          },
+          {
+            "index": 44
           }
         ]
       }
@@ -625,7 +637,7 @@
           "index": 46
         },
         "callee": {
-          "index": 31
+          "index": 30
         }
       }
     },
@@ -633,32 +645,17 @@
       "Call": {
         "callcnt": 2,
         "callcont": {
-          "index": 47
+          "index": 48
         },
         "callee": {
-          "index": 31
+          "index": 30
         }
-      }
-    },
-    {
-      "Group": {
-        "elements": [
-          {
-            "index": 43
-          },
-          {
-            "index": 41
-          },
-          {
-            "index": 44
-          }
-        ]
       }
     },
     {
       "Jmp": {
         "cont": {
-          "index": 48
+          "index": 51
         },
         "per": 1
       }
@@ -667,10 +664,10 @@
       "Call": {
         "callcnt": 2,
         "callcont": {
-          "index": 49
+          "index": 52
         },
         "callee": {
-          "index": 31
+          "index": 30
         }
       }
     },
@@ -688,17 +685,50 @@
     {
       "Jmp": {
         "cont": {
-          "index": 50
+          "index": 47
         },
         "per": 1
       }
     },
     {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 6
+        },
+        "callee": {
+          "index": 3
+        }
+      }
+    },
+    {
       "Jmp": {
         "cont": {
-          "index": 51
+          "index": 49
         },
         "per": 1
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 24
+        },
+        "callee": {
+          "index": 50
+        }
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 5
+        },
+        "callee": {
+          "index": 3
+        }
       }
     },
     {
@@ -724,40 +754,7 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 6
-        },
-        "callee": {
-          "index": 3
-        }
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 25
-        },
-        "callee": {
-          "index": 52
-        }
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 5
-        },
-        "callee": {
-          "index": 3
-        }
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 25
+          "index": 24
         },
         "callee": {
           "index": 54
@@ -776,20 +773,9 @@
       }
     },
     {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 59
-        },
-        "callee": {
-          "index": 11
-        }
-      }
-    },
-    {
       "Jmp": {
         "cont": {
-          "index": 55
+          "index": 58
         },
         "per": 1
       }
@@ -803,10 +789,21 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 57
+          "index": 56
         },
         "callee": {
-          "index": 56
+          "index": 55
+        }
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 59
+        },
+        "callee": {
+          "index": 8
         }
       }
     },
@@ -838,37 +835,29 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
+          "index": 0
+        },
+        "callee": {
+          "index": 60
+        }
+      }
+    },
+    {
+      "Jmp": {
+        "cont": {
+          "index": 22
+        },
+        "per": 1
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 56
+        },
+        "callee": {
           "index": 63
-        },
-        "callee": {
-          "index": 60
-        }
-      }
-    },
-    {
-      "Jmp": {
-        "cont": {
-          "index": 4
-        },
-        "per": 1
-      }
-    },
-    {
-      "Jmp": {
-        "cont": {
-          "index": 21
-        },
-        "per": 1
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 57
-        },
-        "callee": {
-          "index": 64
         }
       }
     },
@@ -884,7 +873,18 @@
       "Call": {
         "callcnt": 1,
         "callcont": {
-          "index": 25
+          "index": 24
+        },
+        "callee": {
+          "index": 65
+        }
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 1,
+        "callcont": {
+          "index": 56
         },
         "callee": {
           "index": 66
@@ -892,31 +892,9 @@
       }
     },
     {
-      "Call": {
-        "callcnt": 1,
-        "callcont": {
-          "index": 57
-        },
-        "callee": {
-          "index": 67
-        }
-      }
-    },
-    {
-      "Call": {
-        "callcnt": 2,
-        "callcont": {
-          "index": 57
-        },
-        "callee": {
-          "index": 72
-        }
-      }
-    },
-    {
       "Jmp": {
         "cont": {
-          "index": 69
+          "index": 70
         },
         "per": 4
       }
@@ -925,17 +903,28 @@
       "Call": {
         "callcnt": 2,
         "callcont": {
-          "index": 57
+          "index": 56
         },
         "callee": {
-          "index": 70
+          "index": 68
+        }
+      }
+    },
+    {
+      "Call": {
+        "callcnt": 2,
+        "callcont": {
+          "index": 56
+        },
+        "callee": {
+          "index": 71
         }
       }
     },
     {
       "Jmp": {
         "cont": {
-          "index": 73
+          "index": 72
         },
         "per": 2
       }
@@ -947,7 +936,7 @@
           "index": 60
         },
         "callee": {
-          "index": 31
+          "index": 30
         }
       }
     }

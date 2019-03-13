@@ -256,6 +256,20 @@ impl CommandContext {
         }
     }
 
+    fn parse_string(values: &str) -> Result<Vec<Box<dyn Value>>, Error> {
+        let reg = Regex::new(",")?;
+        let us = Regex::new("(?P<value>[1-9]?[0-9]*|0)usize")?;
+        let mut r = vec![];
+        for m in reg.split(values) {
+            if let Some(capture) = us.captures(m) {
+                if let Some(value) = capture.name("value") {
+                    r.push(lincoln_compiled::wrap(value.as_str().parse::<usize>()?))
+                }
+            }
+        }
+        Ok(r)
+    }
+
     fn run(&mut self, c: Captures) -> Result<bool, Error> {
         use CommandContext::*;
         let entry = c
@@ -268,10 +282,10 @@ impl CommandContext {
             .as_str()
             .parse::<u8>()?;
         let values = c.name("value").expect("value is none").as_str();
-        let values = Value::parse_string(values)?;
+        let values = Self::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
         let mut ctx: Context = Default::default();
-        ctx.push(Value::FinalReceiver(print));
+        ctx.push(lincoln_compiled::native_closure("print", |p,c,_| print(p, c)));
         for value in values {
             ctx.push(value);
         }

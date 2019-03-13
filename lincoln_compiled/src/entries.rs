@@ -1,26 +1,28 @@
 use crate::coderef::{CodeRef, GroupRef};
-use crate::program::Program;
-use crate::value::{Value, Context};
 use crate::permutation::Permutation;
-use smallvec::SmallVec;
+use crate::program::Program;
+use crate::value::{Context, Value};
 use failure::Error;
+use smallvec::SmallVec;
 
 use std::hash::{Hash, Hasher};
 
-pub type CodeGroup = SmallVec<[CodeRef; 5]>;
+pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
-pub type EvalFn = fn(&'_ Program, Context) -> Result<(CodeRef, Context), Error>;
-pub type ValueFn = fn() -> Value;
+pub type EvalFn = Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>;
+pub type ValueFn = Box<dyn Fn() -> Box<dyn Value>>;
 
-#[derive(Copy, Clone, Serialize)]
+/// An `ExternEntry` refer to a function provided by the external function.
+///
+#[derive(Serialize)]
 pub enum ExternEntry {
     Eval {
-        name: &'static str,
+        name: String,
         #[serde(skip_serializing)]
         eval: EvalFn,
     },
     Value {
-        name: &'static str,
+        name: String,
         #[serde(skip_serializing)]
         value: ValueFn,
     },
@@ -66,7 +68,7 @@ impl PartialEq for ExternEntry {
     }
 }
 impl ExternEntry {
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &str {
         match self {
             ExternEntry::Eval { name, .. } => name,
             ExternEntry::Value { name, .. } => name,

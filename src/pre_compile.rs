@@ -1,5 +1,4 @@
 use lincoln_compiled::{GroupRef, ExternEntry, Program, Permutation, AsPermutation};
-//use lincoln_compiled::{Entry as PEntry, ExportEntry};
 use lincoln_common::traits::Access;
 use lincoln_common::traits::StringLike;
 use core::fmt::{Debug, Display, Formatter};
@@ -349,7 +348,7 @@ impl PreCompileProgram {
     }
     /// Compile this program with a set of external functions
     ///
-    pub fn compile(&self, externs: impl AsRef<[ExternEntry]>) -> Result<Program, Error> {
+    pub fn compile(&self, externs: impl AsRef<[fn () -> ExternEntry]>) -> Result<Program, Error> {
         let mut prog: Program = Default::default();
         let mut coderef_map = BTreeMap::new();
         let mut groupdef_map: BTreeMap<EntryRef, GroupRef> = BTreeMap::new();
@@ -371,9 +370,9 @@ impl PreCompileProgram {
                     .ok_or(format_err!("Invalid entry ref for PM"))?;
                 match entry {
                     Entry::Extern { name } => {
-                        if let Some(e) = externs.as_ref().iter().find(|e| (*e).name() == name) {
+                        if let Some(e) = externs.as_ref().iter().find(|e| (*e)().name() == name) {
                             let e = (*e).clone();
-                            let _ = coderef_map.insert(entryref, prog.add_extern(e));
+                            let _ = coderef_map.insert(entryref, prog.add_extern(e()));
                             debug!("define extern {}", name);
                         } else {
                             bail!("Extern entry not found {}", name);
@@ -387,14 +386,14 @@ impl PreCompileProgram {
                         debug!("define return {}", self.find_name(entryref.index)?);
                     }
                     Entry::Jmp { cont, per } => {
-                        let cont = *coderef_map.get(&cont).ok_or(format_err!(
+                        let cont = coderef_map.get(&cont).ok_or(format_err!(
                             "Dependency error: cont for Jmp is undefined: {}, {}, {}",
                             cont,
                             level,
                             self.find_name(entryref.index)?
                         ))?;
                         let _ = coderef_map
-                            .insert(entryref, prog.add_jump(cont, *per));
+                            .insert(entryref, prog.add_jump(cont.clone(), *per));
                         debug!("define jump {}", self.find_name(entryref.index)?);
                     }
                     Entry::Call {
@@ -402,7 +401,7 @@ impl PreCompileProgram {
                         callcnt,
                         callcont,
                     } => {
-                        let call = *coderef_map.get(&callee).ok_or(format_err!(
+                        let call = coderef_map.get(&callee).ok_or(format_err!(
                             "Dependency error: callee for Call is undefined"
                         ))?;
                         let cont = groupdef_map.get(callcont);
@@ -411,7 +410,7 @@ impl PreCompileProgram {
                                 let _ = coderef_map.insert(
                                     entryref,
                                     prog.add_call(
-                                        call,
+                                        call.clone(),
                                         *callcnt,
                                         *cont,
                                     ),
@@ -422,12 +421,12 @@ impl PreCompileProgram {
                                 let grp = prog.add_empty_group();
                                 let _ = groupdef_map.insert(*callcont, grp);
                                 if let Some(cont) = coderef_map.get(&callcont) {
-                                    prog.add_group_entry(grp, *cont)?;
+                                    prog.add_group_entry(grp, cont.clone())?;
                                 }
                                 let _ = coderef_map.insert(
                                     entryref,
                                     prog.add_call(
-                                        call,
+                                        call.clone(),
                                         *callcnt,
                                         grp,
                                     ),
@@ -451,7 +450,7 @@ impl PreCompileProgram {
                             let element = coderef_map.get(element).ok_or(format_err!(
                                 "Deoendency error: group element is not defined"
                             ))?;
-                            prog.add_group_entry(grp, *element)?;
+                            prog.add_group_entry(grp, element.clone())?;
                         }
                         let _ = groupdef_map.insert(entryref, grp);
                     }
@@ -478,7 +477,7 @@ impl PreCompileProgram {
                         ent,
                         export
                     ))?;
-                    prog.add_group_entry(grp, *ent)?;
+                    prog.add_group_entry(grp, ent.clone())?;
                     prog.add_export(name, grp)
                 }
             }

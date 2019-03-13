@@ -5,3 +5,6 @@ lincoln_compiled/target
 lincoln_compiled/Cargo.lock
 lincoln_common/Cargo.lock
 history.txt
+lincoln_wasm/pkg
+lincoln_wasm/target
+lincoln_web/target

@@ -1,82 +1,67 @@
-use lincoln_compiled::Context;
-use lincoln_compiled::Value;
-use lincoln_compiled::CodeRef;
 use lincoln_compiled::ExternEntry;
 
 eval_fn_untyped!(_from(p, c), 2, [v, cont], {
-    let v = v.unwrap::<usize>(p)?;
+    let v = lincoln_compiled::unwrap::<usize>(v, p)?;
     debug!("from {}", v);
-    let mut ctx: Context = Default::default();
-    let from1 = CodeRef::ExternFn("from", _from);
     if v == 0 {
         cont.eval(p, c, 0)
     } else if v % 2 == 1 {
         let n = (v - 1) / 2;
-        ctx.push(Value::wrap(n));
-        c.push(Value::closure(&[from1], ctx));
+        c.push(lincoln_compiled::native_closure("from", move |p,mut c,_|{
+            c.push(lincoln_compiled::wrap(n));
+            _from(p, c)
+        }));
         cont.eval(p, c, 1)
     } else {
         let n = (v - 2) / 2;
-        ctx.push(Value::wrap(n));
-        c.push(Value::closure(&[from1], ctx));
+        c.push(lincoln_compiled::native_closure("from", move |p,mut c,_|{
+            c.push(lincoln_compiled::wrap(n));
+            _from(p, c)
+        }));
         cont.eval(p, c, 2)
     }
 });
 eval_fn_untyped!(_onzero(p, c), 1, [cont], {
-    c.push(Value::wrap(0usize));
+    c.push(lincoln_compiled::wrap(0usize));
     cont.eval(p, c, 0)
 });
 eval_fn!(_onodd_result(p, c), 2, cont, [v]: [usize], {
-    c.push(Value::wrap(v * 2 + 1));
+    c.push(lincoln_compiled::wrap(v * 2 + 1));
     cont.eval(p, c, 0)
 });
 eval_fn_untyped!(_onodd(p, c), 2, [cont, v], {
-    let mut ctx: Context = Default::default();
-    ctx.push(cont);
-    let closure = Value::closure(
-        &[CodeRef::ExternFn(
-            "onodd_result",
-            _onodd_result,
-        )],
-        ctx,
-    );
     c.push(v);
-    c.push(closure);
+    c.push(lincoln_compiled::native_closure("onodd", |p,mut c,_| {
+        c.push(cont);
+        _onodd_result(p,c)
+    }));
     _count(p, c)
 });
 eval_fn!(_oneven_result(p, c), 2, cont, [v]: [usize], {
-    c.push(Value::wrap(v * 2 + 2));
+    c.push(lincoln_compiled::wrap(v * 2 + 2));
     cont.eval(p, c, 0)
 });
 eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
-    let mut ctx: Context = Default::default();
-    ctx.push(cont);
-    let closure = Value::closure(
-        &[CodeRef::ExternFn(
-            "oneven_result",
-            _oneven_result,
-        )],
-        ctx,
-    );
     c.push(v);
-    c.push(closure);
+    c.push(lincoln_compiled::native_closure("oneven", |p,mut c,_| {
+        c.push(cont);
+        _oneven_result(p,c)
+    }));
     _count(p, c)
 });
 eval_fn_untyped!(_count(p, c), 2, [cont, v], {
     debug!("count ");
 
-    let mut ctx: lincoln_compiled::Context = Default::default();
-    ctx.push(cont);
-    let closure = Value::closure(
-        &[
-            CodeRef::ExternFn("onzero", _onzero),
-            CodeRef::ExternFn("onodd", _onodd),
-            CodeRef::ExternFn("oneven", _oneven),
-        ],
-        ctx,
-    );
-    c.push(closure);
+    c.push(lincoln_compiled::native_closure("cont_handler", |p,mut c,v| {
+        c.push(cont);
+        match v {
+            0 => _onzero(p,c),
+            1 => _onodd(p,c),
+            2 => _oneven(p,c),
+            _ => bail!("Variant out of range: {}", v)
+        }
+    }));
     v.eval(p, c, 0)
 });
 
-pub const BINT_EXTERNS: &[ExternEntry] = &[eval!("from", _from), eval!("count", _count)];
+pub const BINT_EXTERNS: &[fn () -> ExternEntry] = &[eval!("from", _from), eval!("count", _count)];
