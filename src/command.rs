@@ -218,7 +218,7 @@ impl CommandContext {
     }
     fn delete(&mut self, c: Captures) -> Result<bool, Error> {
         let label = c.name("deletelabel").expect("deletelabel is none").as_str();
-        self.program_mut().delete_ent(label);
+        self.program_mut().delete_ent(label)?;
         Ok(true)
     }
     fn compile(&mut self, c: Captures) -> Result<bool, Error> {

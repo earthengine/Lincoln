@@ -89,9 +89,6 @@ impl EntryRef {
             false
         }
     }
-    pub fn is_in(&self, pm: &PreCompileProgram) -> bool {
-        self.index < pm.entries.len()
-    }
     pub fn new(index: usize) -> Self {
         EntryRef { index }
     }
@@ -112,11 +109,7 @@ impl<'a> Access<'a, PreCompileProgram> for EntryRef {
     where
         'b: 'a,
     {
-        if self.is_in(src) {
-            Some(&src.entries[self.index])
-        } else {
-            None
-        }
+        src.entry(self.index)
     }
 }
 impl<'a> AccessMut<'a, PreCompileProgram> for EntryRef {
@@ -125,10 +118,6 @@ impl<'a> AccessMut<'a, PreCompileProgram> for EntryRef {
     where
         'b: 'a,
     {
-        if self.is_in(src) {
-            Some(&mut src.entries[self.index])
-        } else {
-            None
-        }
+        src.entry_mut(self.index)
     }
 }
