@@ -1,16 +1,16 @@
 use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
-use crate::value::{Context, Value};
-use crate::entries::{Entry, ExternEntry, ExportEntry, CodeGroup};
+use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
+use crate::value::{Context, closure_prog};
 use crate::Permutation;
-use lincoln_common::traits::{Access, StringLike};
 use failure::Error;
+use lincoln_common::traits::{Access, StringLike};
 
 #[derive(Serialize, Default)]
 pub struct Program {
-    pub entries: Vec<Entry>,
-    pub externs: Vec<ExternEntry>,
-    pub exports: Vec<ExportEntry>,
-    pub groups: Vec<CodeGroup>,
+    pub(crate) entries: Vec<Entry>,
+    pub(crate) externs: Vec<ExternEntry>,
+    pub(crate) exports: Vec<ExportEntry>,
+    pub(crate) groups: Vec<CodeGroup>,
 }
 impl std::fmt::Debug for Program {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
@@ -43,6 +43,14 @@ impl std::fmt::Debug for Program {
     }
 }
 impl Program {
+    pub fn new() -> Self {
+        Program {
+            entries: vec![],
+            externs: vec![],
+            exports: vec![],
+            groups: vec![],
+        }
+    }
     pub fn add_extern(&mut self, ent: ExternEntry) -> CodeRef {
         let pos = ExternRef::new_coderef(self.externs.len());
         self.externs.push(ent);
@@ -54,16 +62,23 @@ impl Program {
         pos
     }
     pub fn add_return(&mut self, variant: u8) -> CodeRef {
-        self.add_entry(Entry::Return{ variant })
+        self.add_entry(Entry::Return { variant })
     }
     pub fn add_jump(&mut self, cont: CodeRef, per: Permutation) -> CodeRef {
-        self.add_entry(Entry::Jump{ cont, per })
+        self.add_entry(Entry::Jump { cont, per })
     }
     pub fn add_call(&mut self, call: CodeRef, num_args: u8, cont: GroupRef) -> CodeRef {
-        self.add_entry(Entry::Call{ call, cont, num_args })
+        self.add_entry(Entry::Call {
+            call,
+            cont,
+            num_args,
+        })
     }
     pub fn add_export(&mut self, name: impl Into<String>, g: GroupRef) {
-        self.exports.push(ExportEntry{ name:name.into(), g })
+        self.exports.push(ExportEntry {
+            name: name.into(),
+            g,
+        })
     }
     pub fn add_empty_group(&mut self) -> GroupRef {
         let pos = GroupRef::new(self.groups.len());
@@ -83,7 +98,7 @@ impl Program {
             .iter()
             .find(|e| e.name == export_label.as_ref())
         {
-            ent.g.as_entry_ref(self, variant)
+            ent.g.get_entry(self, variant)
         } else {
             bail!("Export label not found or invalid");
         }
@@ -132,17 +147,17 @@ impl Program {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {
                     ctx.permutate(*per);
-                    Ok((*cont, ctx))
+                    Ok((cont.clone(), ctx))
                 }
                 Some(Entry::Call {
                     call,
                     cont,
                     num_args,
                 }) => {
-                    let (mut c1, c2) = ctx.split(*num_args);
-                    let v = Value::closure_prog(*cont, c2, self)?;
+                    let (mut c1, c2) = ctx.split(*num_args)?;
+                    let v = closure_prog(*cont, c2, self)?;
                     c1.push(v);
-                    Ok((*call, c1))
+                    Ok((call.clone(), c1))
                 }
                 Some(Entry::Return { variant }) => {
                     let v = ctx.pop()?;
@@ -152,8 +167,8 @@ impl Program {
             },
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(self) {
-                    if let ExternEntry::Eval { eval, .. } = ext {
-                        eval(self, ctx)
+                    if let ExternEntry::Eval { ref eval, .. } = ext {
+                        eval.eval(self, ctx)
                     } else {
                         bail!("Returning to a value extern")
                     }
@@ -161,7 +176,6 @@ impl Program {
                     Err(ext.not_found())
                 }
             }
-            CodeRef::ExternFn(_, f) => f(self, ctx),
             CodeRef::Termination => bail!("Eval on termination"),
         }
     }

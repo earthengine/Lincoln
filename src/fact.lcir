@@ -1,0 +1,27 @@
+fact3: call copy_int 1 fact4
+fact2: jmp fact3 #!ba
+fact1: call fact2 3 zero
+fact19: group fact fact23
+fact: call fact1 2 fact19
+fact20: ret 0
+fact23: jmp fact20 #!ba
+fact4: jmp fact5 #!aecdb
+fact5: call eq 2 fact6
+fact6: group fact7 fact11
+fact7: jmp fact8 #!cba
+fact11: call fact12 3 one
+fact8: call drop_int 1 fact9
+fact12: jmp fact13 #!cba
+fact9: call fact25 1 fact10
+fact13: call copy_int 1 fact14
+fact25: jmp fact22 #!ba
+fact10: call fact23 1 one
+fact22: ret 1
+fact14: jmp fact15 #!aecdb
+fact15: call minus 2 fact16
+fact16: jmp fact17 #!ba
+fact17: call fact24 2 fact18
+fact24: jmp fact20 #!cba
+fact18: jmp mul #!acb
+
+export fact

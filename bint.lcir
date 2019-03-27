@@ -1,0 +1,82 @@
+zero: ret 0
+one: ret 1
+two: ret 2
+zero2: jmp zero #!ba
+zero3: jmp zero #!cba
+one2: jmp one #!ba
+two2: jmp two #!ba
+copy3: call zero3 2 zero
+copy2: call copy3 1 zero
+copy: call zero2 1 copy1
+copy6: jmp copy7 #!cba
+copy5: call copy 1 copy6
+copy11: jmp copy12 #!cba
+copy10: call copy 1 copy11
+copy1: group copy2 copy5 copy10
+copy7: call copy8 2 one2
+copy12: call copy13 2 two2
+copy8: jmp copy9 #!acb
+copy9: call zero3 2 one2
+copy13: jmp copy14 #!acb
+copy14: call zero3 2 two2
+drop1: group zero drop drop
+drop: call zero2 1 drop1        //drop a b -> drop1 b a
+inc3: call one2 1 zero
+inc4: jmp two2 #!ba
+inc5: jmp inc6 #!ba
+inc2: group inc3 inc4 inc5
+inc1: call zero2 1 inc2
+inc: jmp inc1 #!ba
+inc6: call one2 1 inc
+add3: jmp zero2 #!ba            //add3 a b -> zero2 b a => a b
+add4: jmp add5 #!ba             //add4 a b -> add5 b a
+add6: jmp add7 #!ba
+add2: group add3 add4 add6      
+add1: call zero2 1 add2         //add1 a b -> zero2 a (add2 b) => add2 b a
+add: jmp add1 #!bca
+add5: call zero2 1 add8         //
+add7: call zero2 1 add9
+add8: group add10 add12 add15
+add9: group add19 add15 add21
+add10: jmp add11 #!ba
+add12: call add1 2 add13
+add15: call add1 2 add16
+add11: call zero2 1 one2
+add13: jmp add14 #!ba
+add16: jmp add17 #!ba
+add19: jmp add20 #!ba
+add21: call add1 2 add22
+add20: call zero2 1 two2
+add22: jmp add23 #!ba
+add14: call zero2 1 two2
+add17: call add18 1 inc
+add23: call add24 1 inc
+add18: call zero2 1 one2
+add24: call zero2 1 two2
+test_copy3: call count 1 test_copy4
+test_copy2: call copy 1 test_copy3
+test_copy1: jmp test_copy2 #!ba
+test_copy: call test_copy1 1 from
+test_copy4: jmp test_copy5 #!ba
+test_copy5: call count 1 test_copy6
+test_copy6: jmp zero3 #!ba
+test_drop1: jmp drop #!ba           //test_drop1 a b => drop b a
+test_drop: call test_drop1 1 from   //test_drop a b => drop (from b) a
+test_inc2: jmp count #!ba
+test_inc1: call test_inc2 1 inc
+test_inc: call test_inc1 1 from
+test_add3: jmp test_add4 #!cba      //test_add3 a c b -> test_add4 b c a
+test_add2: call test_add3 2 from    //test_add2 a c b -> test_add3 a c (from b)
+test_add1: jmp test_add2 #!acb      //test_add1 a b c -> test_add2 a c b
+test_add: call test_add1 2 from     //test_add a b c -> test_add1 a b (from c) => add1 (from b) (from c) (count a)
+test_add4: call add1 2 count        //test_add4 a b c -> add1 a b (count c)
+
+
+
+extern from
+extern count
+
+export test_add
+export test_copy
+export test_drop
+export test_inc

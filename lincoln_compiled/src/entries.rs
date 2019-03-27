@@ -1,26 +1,62 @@
 use crate::coderef::{CodeRef, GroupRef};
-use crate::program::Program;
-use crate::value::{Value, Context};
 use crate::permutation::Permutation;
-use smallvec::SmallVec;
+use crate::program::Program;
+use crate::value::{Context, Value};
 use failure::Error;
+use smallvec::SmallVec;
 
 use std::hash::{Hash, Hasher};
 
-pub type CodeGroup = SmallVec<[CodeRef; 5]>;
+pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
-pub type EvalFn = fn(&'_ Program, Context) -> Result<(CodeRef, Context), Error>;
-pub type ValueFn = fn() -> Value;
+pub enum EvalFn {
+    Stateless(fn(&Program, Context) -> Result<(CodeRef, Context), Error>),
+    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>)
+}
+impl EvalFn {
+    pub fn eval(&self, prog: &Program, ctx: Context) -> Result<(CodeRef, Context), Error> {
+        match self {
+            EvalFn::Stateless(f) => f(prog, ctx),
+            EvalFn::Dyn(bf) => bf(prog, ctx)
+        }
+    }
+    pub fn stateless(f: fn(&Program, Context) -> Result<(CodeRef, Context), Error>) -> Self {
+        EvalFn::Stateless(f)
+    }
+    pub fn stateful(bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>) -> Self {
+        EvalFn::Dyn(bf)
+    }
+}
+pub enum ValueFn {
+    Stateless(fn() -> Box<dyn Value>),
+    Dyn(Box<dyn Fn() -> Box<dyn Value>>)
+}
+impl ValueFn {
+    pub fn get_value(&self) -> Box<dyn Value> {
+        match self {
+            ValueFn::Stateless(f) => f(),
+            ValueFn::Dyn(bf) => bf()
+        }
+    }
+    pub fn stateless(f: fn() -> Box<dyn Value>) -> Self {
+        ValueFn::Stateless(f)
+    }
+    pub fn dynamic(f: impl 'static + Fn() -> Box<dyn Value>) -> Self {
+        ValueFn::Dyn(Box::new(f))
+    }
+}
 
-#[derive(Copy, Clone, Serialize)]
+/// An `ExternEntry` refer to a function provided by the external function.
+///
+#[derive(Serialize)]
 pub enum ExternEntry {
     Eval {
-        name: &'static str,
+        name: String,
         #[serde(skip_serializing)]
         eval: EvalFn,
     },
     Value {
-        name: &'static str,
+        name: String,
         #[serde(skip_serializing)]
         value: ValueFn,
     },
@@ -66,7 +102,7 @@ impl PartialEq for ExternEntry {
     }
 }
 impl ExternEntry {
-    pub fn name(&self) -> &'static str {
+    pub fn name(&self) -> &str {
         match self {
             ExternEntry::Eval { name, .. } => name,
             ExternEntry::Value { name, .. } => name,

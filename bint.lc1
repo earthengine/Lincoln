@@ -1,0 +1,113 @@
+drop n c :=
+    n
+        zero := c
+        odd n := drop n c
+        even n := drop n c
+
+copy n c :=
+    n
+        zero := 
+            n1 = _ c:= c.zero
+            n2 = _ c:= c.zero
+            c n1 n2
+        odd n :=
+            copy n -> n1 n2
+            n1 = _ c:= c.odd n1
+            n2 = _ c:= c.odd n2
+            c n1 n2
+        even n :=
+            copy n -> n1 n2
+            n1 = _ c:= c.even n1
+            n2 = _ c:= c.even n2
+            c n1 n2
+
+imc_v n c :=
+    n
+        zero := 
+            n = _ c:= c.zero
+            n = _ c:= c.odd n
+            c n
+        odd n :=
+            n = _ c:= c.even n
+            c n
+        even n :=
+            inc n -> n
+            n = _ c:= c.odd n
+            c n
+
+inc_n n c :=
+    n
+        zero :=
+            n = _ c:= c.zero
+            c.odd n
+        odd n :=
+            c.even n
+        even n :=
+            n = inv_v n
+            c.odd n        
+
+test_add c m n :=
+    from m -> m
+    from n -> n
+    add m n -> m
+    count c m
+
+add_v m n c :=
+    m 
+        zero := c n
+        odd m :=
+            n
+                zero := 
+                    m = _ c:= c.odd m
+                    c m
+                odd n :=
+                    add m n -> m
+                    m = _ c:= c.even m
+                    c m
+                even n :=
+                    add m n -> m
+                    inc m -> m
+                    m = _ c:= c.odd m
+                    c m
+        even m :=
+            n
+                zero := 
+                    m = _ c:= c.odd m
+                    c m
+                odd n :=
+                    add m n -> m
+                    inc m -> m
+                    m = _ c:= c.odd m
+                    c m
+                even n :=
+                    add m n -> m
+                    inc m -> m
+                    m = _ c:= c.even m
+                    c m
+
+add_n m n c :=
+    m 
+        zero := n c
+        odd m :=
+            n
+                zero := 
+                    c.odd m
+                odd n :=
+                    add m n -> m
+                    c.even m
+                even n :=
+                    add m n -> m
+                    inc m -> m
+                    c.odd m
+        even m :=
+            n
+                zero := 
+                    c.even m
+                odd n :=
+                    add m n -> m
+                    inc m -> m
+                    c.odd m
+                even n :=
+                    add m n -> m
+                    inc m -> m
+                    c.even m

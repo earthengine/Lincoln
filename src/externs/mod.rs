@@ -5,9 +5,9 @@
 ///
 macro_rules! value {
     ($name:expr, $exp:expr) => {
-        lincoln_compiled::ExternEntry::Value {
-            name: $name,
-            value: || lincoln_compiled::Value::wrap($exp),
+        || lincoln_compiled::ExternEntry::Value {
+            name: $name.into(),
+            value: lincoln_compiled::ValueFn::stateless(|| lincoln_compiled::wrap($exp)),
         }
     };
 }
@@ -21,12 +21,12 @@ macro_rules! value {
 ///
 /// The number of variables and types must match.
 macro_rules! var_unwrap {
-    ($ctx:ident,$prog:ident, []:[]) => {
+    ($ctx:ident, $prog:ident, []:[]) => {
     };
-    ($ctx:ident,$prog:ident, [$var:ident]:[$typ:ty]) => {
-        let $var = $ctx.pop()?.unwrap::<$typ>($prog)?;
+    ($ctx:ident, $prog:ident, [$var:ident]:[$typ:ty]) => {
+        let $var = lincoln_compiled::unwrap::<$typ>($ctx.pop()?, $prog)?;
     };
-    ($ctx:ident,$prog:ident, [$var:ident,$($vars:ident),+]:[$typ:ty,$($typs:ty),+]) => {
+    ($ctx:ident, $prog:ident, [$var:ident,$($vars:ident),+]:[$typ:ty,$($typs:ty),+]) => {
         var_unwrap!($ctx, $prog, [$var]: [$typ]);
         var_unwrap!($ctx, $prog, [$($vars),*]:[$($typs),*])
     }
@@ -74,7 +74,7 @@ macro_rules! eval_fn {
         > {
             $ctx.expect_args($varcnt)?;
             let $cont = $ctx.pop()?;
-            var_unwrap!($ctx,$prog, [$($var),*]:[$($typ),*]);
+            var_unwrap!($ctx, $prog, [$($var),*]:[$($typ),*]);
 
             $blk
         }
@@ -119,7 +119,7 @@ macro_rules! eval_fn_term {
 pub fn $name($prog: &lincoln_compiled::Program, mut $ctx: lincoln_compiled::Context) ->
     Result<(lincoln_compiled::CodeRef, lincoln_compiled::Context), failure::Error>
 {
-    var_unwrap!($ctx,$prog,[$($var),*]:[$($typ),*]);
+    var_unwrap!($ctx, $prog, [$($var),*]:[$($typ),*]);
 
     $blk
     Ok((lincoln_compiled::CodeRef::Termination, $ctx))
@@ -133,9 +133,9 @@ pub fn $name($prog: &lincoln_compiled::Program, mut $ctx: lincoln_compiled::Cont
 /// eval: the function or closure
 macro_rules! eval {
     ($name:expr, $eval:expr) => {
-        lincoln_compiled::ExternEntry::Eval {
-            name: $name,
-            eval: $eval,
+        || lincoln_compiled::ExternEntry::Eval {
+            name: $name.into(),
+            eval: lincoln_compiled::EvalFn::stateless($eval),
         }
     };
 }
@@ -144,13 +144,13 @@ pub mod bint_externs;
 pub mod fact_externs;
 
 eval_fn_term!(print(p,c), []:[], {
-    if c.len()==0{
+    if c.len()==0 {
         println!("no result!");
     } else {
         let mut i=1;
         let len=c.len();
         while c.len()>0 {
-            var_unwrap!(c,p,[v]:[usize]);
+            var_unwrap!(c, p, [v]:[usize]);
             println!("Result({}/{}): {}", i,len,v);
             i+=1;
         }
