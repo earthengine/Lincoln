@@ -10,17 +10,18 @@ extern crate log;
 
 mod coderef;
 mod entries;
+mod error;
 mod permutation;
 mod program;
 mod value;
 
 pub use coderef::{CodeRef, GroupRef};
-pub use entries::{EvalFn, ValueFn};
-pub use entries::ExternEntry;
+pub use entries::{ExternEntry, EvalFn, ValueFn};
+pub use error::BuildError;
 pub use lincoln_common::traits::Access;
 pub use permutation::{AsPermutation, Permutation};
 pub use program::Program;
-pub use value::{Context, Value, wrap, unwrap, native_closure};
+pub use value::{native_closure, unwrap, wrap, Context, Value};
 
 /// The crate contains definitions for a "compiled" prgram,
 /// which contains low level instructions.

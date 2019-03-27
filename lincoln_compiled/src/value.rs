@@ -1,12 +1,12 @@
-use core::fmt::Formatter;
 use crate::coderef::{CodeRef, GroupRef};
+use crate::entries::ExternEntry;
 use crate::permutation::Permutation;
 use crate::program::Program;
 use core::fmt::Debug;
+use core::fmt::Formatter;
 use failure::Error;
 use lincoln_common::traits::{Access, AnyDebug};
 use smallvec::SmallVec;
-use crate::entries::ExternEntry;
 
 pub trait Value: AnyDebug {
     fn eval(
@@ -37,20 +37,24 @@ impl Value for Closure {
         Ok((self.0[variant as usize].clone(), ctx))
     }
     fn into_wrapped(self: Box<Self>, prog: &Program) -> Result<Box<dyn Value>, Error> {
-        if self.1.len()>0 { bail!("Unwrapping closure with non-empty context"); }
-        if self.0.len()!=1 { bail!("Unwrapping closure with multiple variations"); }
+        if self.1.len() > 0 {
+            bail!("Unwrapping closure with non-empty context");
+        }
+        if self.0.len() != 1 {
+            bail!("Unwrapping closure with multiple variations");
+        }
         match self.0[0] {
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(prog) {
                     match ext {
-                        ExternEntry::Value {value,..} => Ok(value.get_value()),
-                        _ => bail!("Not a value")
+                        ExternEntry::Value { value, .. } => Ok(value.get_value()),
+                        _ => bail!("Not a value"),
                     }
                 } else {
                     bail!("Invalid extern")
                 }
             }
-            _ => bail!("Not extern value")
+            _ => bail!("Not extern value"),
         }
     }
 }
@@ -103,7 +107,7 @@ impl Context {
         self.0.append(&mut other.0);
     }
     /// Take all value out and append to a vector.
-    pub fn iterate(self:&mut Self) -> impl Iterator<Item=Box<dyn Value>> {
+    pub fn iterate(self: &mut Self) -> impl Iterator<Item = Box<dyn Value>> {
         core::mem::replace(&mut self.0, vec![]).into_iter()
     }
     /// Receive the length of the context.
@@ -152,36 +156,43 @@ impl Drop for Context {
     fn drop(&mut self) {}
 }
 pub(crate) fn closure_prog(
-        ent: GroupRef,
-        ctx: Context,
-        prog: &Program,
+    ent: GroupRef,
+    ctx: Context,
+    prog: &Program,
 ) -> Result<Box<dyn Value>, Error> {
     Ok(Box::new(Closure(ent.get_vec(prog)?, ctx)))
 }
 
 struct Wrapped<T>(T);
-impl<T> Debug for Wrapped<T> where T: Debug {
+impl<T> Debug for Wrapped<T>
+where
+    T: Debug,
+{
     fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
         write!(fmt, "|{:?}|", self.0)
     }
 }
-impl<T> Value for Wrapped<T> where T: AnyDebug {
-    fn eval(
-        self: Box<Self>,
-        _: &Program,
-        _: Context,
-        _: u8,
-    ) -> Result<(CodeRef, Context), Error> {
+impl<T> Value for Wrapped<T>
+where
+    T: AnyDebug,
+{
+    fn eval(self: Box<Self>, _: &Program, _: Context, _: u8) -> Result<(CodeRef, Context), Error> {
         bail!("Not callable")
     }
     fn into_wrapped(self: Box<Self>, _: &Program) -> Result<Box<dyn Value>, Error> {
         Ok(self)
     }
 }
-pub fn wrap<T>(t: T) -> Box<dyn Value> where T: AnyDebug {
+pub fn wrap<T>(t: T) -> Box<dyn Value>
+where
+    T: AnyDebug,
+{
     Box::new(Wrapped(t))
 }
-pub fn unwrap<T>(v:Box<dyn Value>, prog: &Program) -> Result<T, Error> where T: AnyDebug {
+pub fn unwrap<T>(v: Box<dyn Value>, prog: &Program) -> Result<T, Error>
+where
+    T: AnyDebug,
+{
     Ok(v.into_wrapped(prog)?
         .into_boxed_any()
         .downcast::<Wrapped<T>>()
@@ -190,14 +201,18 @@ pub fn unwrap<T>(v:Box<dyn Value>, prog: &Program) -> Result<T, Error> where T: 
 }
 
 struct WrappedFn<F>(String, F);
-impl<F> Debug for WrappedFn<F> where F: FnOnce(&Program, Context, u8) ->
-Result<(CodeRef, Context), Error> {
+impl<F> Debug for WrappedFn<F>
+where
+    F: FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), Error>,
+{
     fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
         write!(fmt, "{}", self.0)
     }
 }
-impl<F> Value for WrappedFn<F> where F: FnOnce(&Program, Context, u8) ->
-Result<(CodeRef, Context), Error> + 'static {
+impl<F> Value for WrappedFn<F>
+where
+    F: FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), Error> + 'static,
+{
     fn eval(
         self: Box<Self>,
         p: &Program,
@@ -210,7 +225,9 @@ Result<(CodeRef, Context), Error> + 'static {
         bail!("Cannot turn into wrapped")
     }
 }
-pub fn native_closure(name: impl Into<String>, f: impl FnOnce(&Program, Context, u8) ->
-Result<(CodeRef, Context), Error> + 'static) -> Box<dyn Value> {
+pub fn native_closure(
+    name: impl Into<String>,
+    f: impl FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), Error> + 'static,
+) -> Box<dyn Value> {
     Box::new(WrappedFn(name.into(), f))
 }

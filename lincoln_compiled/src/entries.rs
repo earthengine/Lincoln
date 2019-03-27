@@ -11,31 +11,33 @@ pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
 pub enum EvalFn {
     Stateless(fn(&Program, Context) -> Result<(CodeRef, Context), Error>),
-    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>)
+    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>),
 }
 impl EvalFn {
     pub fn eval(&self, prog: &Program, ctx: Context) -> Result<(CodeRef, Context), Error> {
         match self {
             EvalFn::Stateless(f) => f(prog, ctx),
-            EvalFn::Dyn(bf) => bf(prog, ctx)
+            EvalFn::Dyn(bf) => bf(prog, ctx),
         }
     }
     pub fn stateless(f: fn(&Program, Context) -> Result<(CodeRef, Context), Error>) -> Self {
         EvalFn::Stateless(f)
     }
-    pub fn stateful(bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>) -> Self {
+    pub fn stateful(
+        bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>,
+    ) -> Self {
         EvalFn::Dyn(bf)
     }
 }
 pub enum ValueFn {
     Stateless(fn() -> Box<dyn Value>),
-    Dyn(Box<dyn Fn() -> Box<dyn Value>>)
+    Dyn(Box<dyn Fn() -> Box<dyn Value>>),
 }
 impl ValueFn {
     pub fn get_value(&self) -> Box<dyn Value> {
         match self {
             ValueFn::Stateless(f) => f(),
-            ValueFn::Dyn(bf) => bf()
+            ValueFn::Dyn(bf) => bf(),
         }
     }
     pub fn stateless(f: fn() -> Box<dyn Value>) -> Self {

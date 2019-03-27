@@ -1,7 +1,7 @@
 use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
-use crate::value::{Context, closure_prog};
-use crate::Permutation;
+use crate::value::{closure_prog, Context};
+use crate::{BuildError, Permutation};
 use failure::Error;
 use lincoln_common::traits::{Access, StringLike};
 
@@ -85,7 +85,7 @@ impl Program {
         self.groups.push(smallvec![]);
         pos
     }
-    pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), Error> {
+    pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), BuildError> {
         grp.push_to(ent, self)
     }
     pub fn get_export_ent(
@@ -98,7 +98,7 @@ impl Program {
             .iter()
             .find(|e| e.name == export_label.as_ref())
         {
-            ent.g.get_entry(self, variant)
+            ent.g.get_entry(self, variant).map_err(Error::from)
         } else {
             bail!("Export label not found or invalid");
         }

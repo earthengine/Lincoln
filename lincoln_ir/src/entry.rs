@@ -1,4 +1,5 @@
 use crate::PreCompileProgram;
+use failure::Error;
 use lincoln_common::traits::{Access, AccessMut};
 use lincoln_compiled::Permutation;
 use std::fmt::{Debug, Display, Formatter};
@@ -66,9 +67,10 @@ impl Display for Entry {
             } => write!(fmt, "call {} {} {}", callee, callcnt, callcont),
             Entry::Ret { variant } => write!(fmt, "ret {}", variant),
             Entry::Group { elements } => {
-                write!(fmt, "group ")?;
-                for (idx, element) in elements.iter().enumerate() {
-                    write!(fmt, "{}:{} ", idx, *element)?;
+                write!(fmt, "group")?;
+                let it = elements.iter().enumerate();
+                for (idx, element) in it {
+                    write!(fmt, " {}:{}", idx, *element)?;
                 }
                 Ok(())
             }
@@ -83,7 +85,7 @@ pub struct EntryRef {
 }
 impl EntryRef {
     pub fn is_group_in(&self, pm: &PreCompileProgram) -> bool {
-        if let Some(v) = self.access(pm) {
+        if let Ok(v) = self.access(pm) {
             v.is_group()
         } else {
             false
@@ -104,7 +106,7 @@ impl Display for EntryRef {
     }
 }
 impl<'a> Access<'a, PreCompileProgram> for EntryRef {
-    type Target = Option<&'a Entry>;
+    type Target = Result<&'a Entry, Error>;
     fn access<'b>(&self, src: &'b PreCompileProgram) -> Self::Target
     where
         'b: 'a,
@@ -113,11 +115,61 @@ impl<'a> Access<'a, PreCompileProgram> for EntryRef {
     }
 }
 impl<'a> AccessMut<'a, PreCompileProgram> for EntryRef {
-    type Target = Option<&'a mut Entry>;
+    type Target = Result<&'a mut Entry, Error>;
     fn access_mut<'b>(&self, src: &'b mut PreCompileProgram) -> Self::Target
     where
         'b: 'a,
     {
         src.entry_mut(self.index)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn test_debug() {
+        use crate::entry::{Entry, EntryRef};
+        let ent = Entry::Jmp {
+            cont: EntryRef::new(0),
+            per: "ba".parse().unwrap(),
+        };
+        assert_eq!(format!("{:?}", ent), "jmp #0 #!ba");
+        let ent = Entry::Call {
+            callee: EntryRef::new(1),
+            callcnt: 3,
+            callcont: EntryRef::new(2),
+        };
+        assert_eq!(format!("{:?}", ent), "call #1 3 #2");
+        let ent = Entry::Ret { variant: 2 };
+        assert_eq!(format!("{:?}", ent), "ret 2");
+        let ent = Entry::Extern { name: "ext".into() };
+        assert_eq!(format!("{:?}", ent), "extern ext");
+        let ent = Entry::Group {
+            elements: vec![EntryRef::new(3), EntryRef::new(4)],
+        };
+        assert_eq!(format!("{:?}", ent), "group 0:#3 1:#4");
+    }
+    #[test]
+    fn test_display() {
+        use crate::entry::{Entry, EntryRef};
+        let ent = Entry::Jmp {
+            cont: EntryRef::new(0),
+            per: "ba".parse().unwrap(),
+        };
+        assert_eq!(format!("{}", ent), "jmp #0 #!ba");
+        let ent = Entry::Call {
+            callee: EntryRef::new(1),
+            callcnt: 3,
+            callcont: EntryRef::new(2),
+        };
+        assert_eq!(format!("{}", ent), "call #1 3 #2");
+        let ent = Entry::Ret { variant: 2 };
+        assert_eq!(format!("{}", ent), "ret 2");
+        let ent = Entry::Extern { name: "ext".into() };
+        assert_eq!(format!("{}", ent), "extern ext");
+        let ent = Entry::Group {
+            elements: vec![EntryRef::new(3), EntryRef::new(4)],
+        };
+        assert_eq!(format!("{}", ent), "group 0:#3 1:#4");
     }
 }

@@ -1,5 +1,6 @@
 use crate::entries::{CodeGroup, Entry, ExternEntry};
 use crate::program::Program;
+use crate::BuildError;
 use failure::Error;
 use lincoln_common::traits::Access;
 
@@ -161,15 +162,18 @@ impl GroupRef {
     /// p: the program
     /// idx: the index of the group entries
     ///
-    pub fn get_entry(self, p: &Program, idx: u8) -> Result<CodeRef, Error> {
+    pub fn get_entry(self, p: &Program, idx: u8) -> Result<CodeRef, BuildError> {
         let GroupRef(i) = self;
         let len = p.groups.len();
         if len <= i {
-            bail!("Group entry not found {}", i)
+            return Err(BuildError::GroupNotFound(GroupRef(i)));
         } else {
             let g = &p.groups[i];
             if g.len() <= idx as usize {
-                bail!("Variant out of range: given {}, max {}", idx, g.len())
+                return Err(BuildError::VariangOutOfRange {
+                    given: idx,
+                    max: g.len() as u8,
+                });
             } else {
                 Ok(g[idx as usize].clone())
             }
@@ -179,10 +183,10 @@ impl GroupRef {
         let GroupRef(i) = self;
         *i
     }
-    pub(crate) fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), Error> {
+    pub(crate) fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), BuildError> {
         let GroupRef(i) = self;
         if *i > p.groups.len() {
-            bail!("Invalid group index {}", i)
+            return Err(BuildError::GroupNotFound(GroupRef(*i)));
         }
         Ok(p.groups[*i].push(c))
     }

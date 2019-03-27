@@ -1,10 +1,11 @@
+use crate::codemap::CodeMap;
+use crate::entry::{Entry, EntryRef};
 use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
 use lincoln_common::traits::StringLike;
 use lincoln_common::traits::{Access, AccessMut};
-use lincoln_compiled::{AsPermutation, ExternEntry, GroupRef, Permutation, Program};
+use lincoln_compiled::{AsPermutation, ExternEntry, Permutation, Program};
 use std::collections::{BTreeMap, BTreeSet};
-use crate::entry::{Entry, EntryRef};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct PreCompileProgram {
@@ -141,7 +142,7 @@ impl PreCompileProgram {
         let labelent = self.defined_ent.get(label.as_ref());
         if let Some(ent) = labelent {
             let ent = *ent;
-            *ent.access_mut(self).ok_or(format_err!("Invalid entry ref for PM"))? = Entry::Extern { name: label.into() };
+            *ent.access_mut(self)? = Entry::Extern { name: label.into() };
         }
         Ok(())
     }
@@ -197,7 +198,8 @@ impl PreCompileProgram {
     /// variant: which element of the group should be refer to
     ///
     pub fn define_ret(&mut self, label: impl StringLike, variant: u8) -> Result<EntryRef, Error> {
-        self.define_ret_internal(label, variant)
+        let ent = Entry::Ret { variant };
+        self.define_ent_internal(label.into(), ent)
     }
     /// Define a group of instructions
     ///
@@ -235,14 +237,19 @@ impl PreCompileProgram {
     /// Compile this program with a set of external functions
     ///
     pub fn compile(&self, externs: impl AsRef<[fn() -> ExternEntry]>) -> Result<Program, Error> {
-        let mut prog: Program = Default::default();
-        let mut coderef_map = BTreeMap::new();
-        let mut groupdef_map: BTreeMap<EntryRef, GroupRef> = BTreeMap::new();
+        let mut cm = CodeMap::new();
         let ds = self.dependency_sort();
         let sorted = ds
             .iter()
             .flat_map(|(_, e)| e)
             .collect::<BTreeSet<&EntryRef>>();
+        // dependency_sort will put different entries into categories where
+        // level 0 are externs, level 1 are returns or only refering to externs,
+        // level 2 are only refering level 1 or less, etc.
+        //
+        // If there is an entry have not been sourt out, this entry must be in a circular reference.
+        // We then find sucn entries and report error on those.
+        //
         if sorted.len() != self.entries.len() {
             error!("{} entries was found involved in a circular reference without groups (call conts).",
                 self.entries.len()-sorted.len());
@@ -256,85 +263,40 @@ impl PreCompileProgram {
             }
             bail!("circular reference detected");
         }
-        for (level, entries) in ds {
+        // Starting from the lowest level, we add compiled instructions to the compiled program.
+        // 
+        for (_level, entries) in ds {
             for entry in entries {
                 let entryref = entry;
-                let entry = entry
-                    .access(&self)
-                    .ok_or(format_err!("Invalid entry ref for PM"))?;
+                let entry = entry.access(&self)?;
                 match entry {
                     Entry::Extern { name } => {
                         if let Some(e) = externs.as_ref().iter().find(|e| (*e)().name() == name) {
-                            let e = (*e).clone();
-                            let _ = coderef_map.insert(entryref, prog.add_extern(e()));
-                            debug!("define extern {}", name);
+                            cm.add_extern(entryref, e());
                         } else {
                             bail!("Extern entry not found {}", name);
                         }
                     }
                     Entry::Ret { variant } => {
-                        let _ = coderef_map.insert(entryref, prog.add_return(*variant));
-                        debug!("define return {}", self.find_name(&entryref)?);
+                        cm.add_return(entryref, *variant);
                     }
                     Entry::Jmp { cont, per } => {
-                        let cont = coderef_map.get(&cont).ok_or(format_err!(
-                            "Dependency error: cont for Jmp is undefined: {}, {}, {}",
-                            cont,
-                            level,
-                            self.find_name(&entryref)?
-                        ))?;
-                        let _ = coderef_map.insert(entryref, prog.add_jump(cont.clone(), *per));
-                        debug!("define jump {}", self.find_name(&entryref)?);
+                        cm.add_jmp(entryref, *cont, *per)?;
                     }
                     Entry::Call {
                         callee,
                         callcnt,
                         callcont,
                     } => {
-                        let call = coderef_map.get(&callee).ok_or(format_err!(
-                            "Dependency error: callee for Call is undefined"
-                        ))?;
-                        let cont = groupdef_map.get(callcont);
-                        match cont {
-                            Some(cont) => {
-                                let _ = coderef_map
-                                    .insert(entryref, prog.add_call(call.clone(), *callcnt, *cont));
-                                debug!("define call {}", self.find_name(&entryref)?);
-                            }
-                            None => {
-                                let grp = prog.add_empty_group();
-                                let _ = groupdef_map.insert(*callcont, grp);
-                                if let Some(cont) = coderef_map.get(&callcont) {
-                                    prog.add_group_entry(grp, cont.clone())?;
-                                }
-                                let _ = coderef_map
-                                    .insert(entryref, prog.add_call(call.clone(), *callcnt, grp));
-                                debug!("define call {} for group", self.find_name(&entryref)?);
-                            }
-                        }
+                        cm.add_call(entryref, *callee, *callcnt, *callcont)?;
                     }
                     Entry::Group { elements } => {
-                        debug!("defining group {}...", self.find_name(&entryref)?);
-                        let grp = if let Some(grp) = groupdef_map.get(&entryref) {
-                            debug!("group inserted {:?}", grp);
-                            *grp
-                        } else {
-                            let grp = prog.add_empty_group();
-                            let _ = groupdef_map.insert(entryref, grp);
-                            debug!("new group {:?}", grp);
-                            grp
-                        };
-                        for element in elements {
-                            let element = coderef_map.get(element).ok_or(format_err!(
-                                "Dependency error: group element is not defined"
-                            ))?;
-                            prog.add_group_entry(grp, element.clone())?;
-                        }
-                        let _ = groupdef_map.insert(entryref, grp);
+                        cm.add_group(entryref, elements)?;
                     }
                 }
             }
         }
+        // Mark exports
         for export in self.exports.iter() {
             let name = export.clone();
             let ent = self
@@ -342,32 +304,99 @@ impl PreCompileProgram {
                 .get(export)
                 .ok_or(format_err!("Invalid export"))?;
             match ent.access(self) {
-                Some(Entry::Group { .. }) => {
-                    let grp = groupdef_map
-                        .get(ent)
-                        .ok_or(format_err!("group not found"))?;
-                    prog.add_export(name, *grp)
+                Ok(Entry::Group { .. }) => {
+                    cm.add_export_group(*ent, name)?;
                 }
                 _ => {
-                    let grp = prog.add_empty_group();
-                    let ent = coderef_map.get(ent).ok_or(format_err!(
-                        "entry not found {}({})",
-                        ent,
-                        export
-                    ))?;
-                    prog.add_group_entry(grp, ent.clone())?;
-                    prog.add_export(name, grp)
+                    cm.add_export(*ent, name)?;
                 }
             }
         }
-        Ok(prog)
+        Ok(cm.destruct().0)
     }
 
-    pub(crate) fn entry(&self, idx: usize) -> Option<&Entry> {
-        if idx<self.entries.len() { Some(&self.entries[idx]) } else { None }
+    pub(crate) fn entry(&self, idx: usize) -> Result<&Entry, Error> {
+        if idx < self.entries.len() {
+            Ok(&self.entries[idx])
+        } else {
+            bail!("Invalid entry ref for PM") 
+        }
     }
-    pub(crate) fn entry_mut(&mut self, idx: usize) -> Option<&mut Entry> {
-        if idx<self.entries.len() { Some(&mut self.entries[idx]) } else { None }
+    pub(crate) fn entry_mut(&mut self, idx: usize) -> Result<&mut Entry, Error> {
+        if idx < self.entries.len() {
+            Ok(&mut self.entries[idx])
+        } else {
+            bail!("Invalid entry ref for PM")
+        }
+    }
+
+    fn find_name(&self, entry: &EntryRef) -> Result<&str, std::fmt::Error> {
+        for e in self.defined_ent.iter() {
+            if entry == e.1 {
+                return Ok(&e.0);
+            }
+        }
+        Err(std::fmt::Error::default())
+    }
+    fn define_ent_internal(
+        &mut self,
+        label: impl StringLike,
+        ent: Entry,
+    ) -> Result<EntryRef, Error> {
+        let idx = self.entries.len();
+        let ret = EntryRef::new(idx);
+        let labelent = self.defined_ent.get(label.as_ref());
+        if let Some(ext) = labelent {
+            let ent_orig = format!("{}", ext.access(self)?);
+            info!("Redefine {} => {}", ent_orig, ent);
+            let ext = *ext;
+            *ext.access_mut(self)? = ent;
+        } else {
+            self.entries.push(ent);
+            let _ = self.defined_ent.insert(label.into(), ret);
+        }
+        Ok(ret)
+    }
+    fn define_extern_or_entry(&mut self, name: impl StringLike) -> Result<EntryRef, Error> {
+        if let Some(ent) = self.defined_ent.get(name.as_ref()) {
+            return Ok(*ent);
+        }
+        let ent = Entry::Extern {
+            name: name.clone_string(),
+        };
+        let r = self.define_ent_internal(name.into(), ent)?;
+        Ok(r)
+    }
+    fn define_jmp_internal(
+        &mut self,
+        name: impl StringLike,
+        cont: EntryRef,
+        per: Permutation,
+    ) -> Result<EntryRef, Error> {
+        let ent = Entry::Jmp { cont, per: per };
+        self.define_ent_internal(name.into(), ent)
+    }
+    fn define_call_internal(
+        &mut self,
+        name: impl StringLike,
+        callee: EntryRef,
+        callcnt: u8,
+        callcont: EntryRef,
+    ) -> Result<EntryRef, Error> {
+        let ent = Entry::Call {
+            callee,
+            callcnt,
+            callcont,
+        };
+        self.define_ent_internal(name.into(), ent)
+    }
+    fn define_group_internal(
+        &mut self,
+        name: impl StringLike,
+        elements: Vec<EntryRef>,
+    ) -> Result<EntryRef, Error> {
+        let ent = Entry::Group { elements };
+        self.define_ent_internal(name.into(), ent)
     }
 
     fn find_refs(&self, seed: &BTreeSet<EntryRef>) -> BTreeSet<EntryRef> {
@@ -414,7 +443,7 @@ impl PreCompileProgram {
             fn next(&mut self) -> Option<Self::Item> {
                 let entref = EntryRef::new(self.0);
                 let ent = entref.access(self.1);
-                if let Some(ent) = ent {
+                if let Ok(ent) = ent {
                     let is_export = self.2.contains(&entref);
                     let name = if let Ok(name) = self.1.find_name(&EntryRef::new(self.0)) {
                         name
@@ -434,88 +463,6 @@ impl PreCompileProgram {
             .map(|export| self.defined_ent[export])
             .collect();
         PIterator(0, self, exps)
-    }
-
-    fn find_name(&self, entry: &EntryRef) -> Result<&str, std::fmt::Error> {
-        for e in self.defined_ent.iter() {
-            if entry == e.1 {
-                return Ok(&e.0);
-            }
-        }
-        Err(std::fmt::Error::default())
-    }
-    fn define_ent_internal(
-        &mut self,
-        label: impl StringLike,
-        ent: Entry,
-    ) -> Result<EntryRef, Error> {
-        let idx = self.entries.len();
-        let ret = EntryRef::new(idx);
-        let labelent = self.defined_ent.get(label.as_ref());
-        if let Some(ext) = labelent {
-            let ent_orig = format!("{}", ext.access(self).ok_or(format_err!("Invalid entry ref for PM"))?);
-            info!("Redefine {} => {}", ent_orig, ent);
-            let ext = *ext;
-            //if let Entry::Extern { .. } = ent_orig {
-            *ext.access_mut(self).ok_or(format_err!("Invalid entry ref for PM"))? = ent;
-        //} else {
-        //bail!("Redefine entry that is not extern: {} => {}", ent_orig, ent);
-
-        //}
-        } else {
-            self.entries.push(ent);
-            let _ = self.defined_ent.insert(label.into(), ret);
-        }
-        Ok(ret)
-    }
-    fn define_extern_or_entry(&mut self, name: impl StringLike) -> Result<EntryRef, Error> {
-        if let Some(ent) = self.defined_ent.get(name.as_ref()) {
-            return Ok(*ent);
-        }
-        let ent = Entry::Extern {
-            name: name.clone_string(),
-        };
-        let r = self.define_ent_internal(name.into(), ent)?;
-        Ok(r)
-    }
-    fn define_jmp_internal(
-        &mut self,
-        name: impl StringLike,
-        cont: EntryRef,
-        per: Permutation,
-    ) -> Result<EntryRef, Error> {
-        let ent = Entry::Jmp { cont, per: per };
-        self.define_ent_internal(name.into(), ent)
-    }
-    fn define_call_internal(
-        &mut self,
-        name: impl StringLike,
-        callee: EntryRef,
-        callcnt: u8,
-        callcont: EntryRef,
-    ) -> Result<EntryRef, Error> {
-        let ent = Entry::Call {
-            callee,
-            callcnt,
-            callcont,
-        };
-        self.define_ent_internal(name.into(), ent)
-    }
-    fn define_ret_internal(
-        &mut self,
-        name: impl StringLike,
-        variant: u8,
-    ) -> Result<EntryRef, Error> {
-        let ent = Entry::Ret { variant };
-        self.define_ent_internal(name.into(), ent)
-    }
-    fn define_group_internal(
-        &mut self,
-        name: impl StringLike,
-        elements: Vec<EntryRef>,
-    ) -> Result<EntryRef, Error> {
-        let ent = Entry::Group { elements };
-        self.define_ent_internal(name.into(), ent)
     }
     fn dependency_sort(&self) -> BTreeMap<usize, BTreeSet<EntryRef>> {
         let mut r = BTreeMap::new();
@@ -549,7 +496,7 @@ fn collect_successful<T, E>(i: impl Iterator<Item = Result<T, E>>) -> Result<Vec
 mod test {
     #[test]
     fn test_group() {
-        let mut p: crate::pre_compile::PreCompileProgram = Default::default();
+        let mut p: crate::PreCompileProgram = Default::default();
         let _ = p.define_group("group", &["test"]).unwrap();
         let _ = p.define_call("test", "test", 0, "group").unwrap();
     }

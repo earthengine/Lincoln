@@ -6,10 +6,9 @@ extern crate serde_derive;
 #[macro_use]
 extern crate log;
 
+mod codemap;
 mod entry;
 mod program;
 
 pub use entry::{Entry, EntryRef};
 pub use program::PreCompileProgram;
-
-
