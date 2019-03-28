@@ -153,28 +153,36 @@ The minimalism design of Lincoln means that the current IR will be likely be fre
 
 ## A proposal of high level language
 
-If we represent the `fact` example above in a high level language that is python-like, it would looks like
+If we represent the `fact` example above in a high level language that is Haskell-like, it would looks like
 
-```python
-fact c n := # a definition of `fact`, takes variable `c` and `n`
-    f =     # an assignment, which is always lazy
-        call c n := fact c n # a definition of a variant "call"
-        drop c := c          # another variant "drop"
-    zero -> z                # an invocation, result are in `z`
-    one -> o                 # `zero` and `one` are external
-    copy_int n -> n1 n2      # `copy_int` is external
-    eq n1 z                  # Without the array, the group of variants simple values only
+```haskell
+extern zero
+extern one
+extern copy_int
+extern eq
+extern drop_int
+extern minus
+extern mul
+
+fact c n := -- a definition of `fact`, takes variable `c` and `n`
+    f =     -- an assignment, which is always lazy
+        call c n := fact c n -- a definition of a variant "call"
+        drop c := c          -- another variant "drop"
+    zero -> z                -- an invocation, result are in `z`
+    one -> o                 -- `zero` and `one` are external
+    copy_int n -> n1 n2      -- `copy_int` is external
+    eq n1 z                  -- Without the arrow, the group of variants simple values only
         equals :=
-            drop n2 ->       # `drop` is external
-            f.drop ->        # call the `drop` variant of f
-            c o              # the final statement
+            drop_int n2 ->       -- `drop_int` is external
+            f.drop ->        -- call the `drop` variant of f
+            c o              -- the final statement
         not_equal := 
             copy_int n2 -> n1 n2
-            minus n1 o -> n    # minus is external
-            c = _ n :=         # Assign a closure to `c`
-                mul n n2 -> n  # mul is external
+            minus n1 o -> n    -- minus is external
+            c = _ n :=         -- Assign a closure to `c`
+                mul n n2 -> n  -- mul is external
                 c n
-            f.call c n         # call the `call` variant of f (recursion)
+            f.call c n         -- call the `call` variant of f (recursion)
 ```
 The above example demostrates the basic idea:
 
