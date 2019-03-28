@@ -1,43 +1,55 @@
 # What is Lincoln?
 
-Lincoln is a simple conceptual programming environment. Rather than focusing on making programming easier, it is aim to be a easy computing model at the moment. So do not expect programming in Lincoln would be easy. However, it have very easy concepts and brain models, so it is not hard to learn.
+Lincoln is developed to be a new programming environment, including a simple IR, an simple interpreter, and later some layers of hight level languages.
 
-The name "Lincoln" is to regard the great American president, but it also means short pronunciation "Linear Continuation", which means:
+The IR is also designed for a form that is suitable as a target of many other programming languages, although those languages generally have quite different sementics.
 
-* Every statement have a continuation, either through the context value, or through the statement setting.
-* All values are linear, including the continuations, which means they can only be used once and have to be used once.
+In computing, Lincoln lies in between two other simple models: the Turing machine and the lambda calculus. The Turing machine have simple operational sementic, but lacks of denotational semantics, which means you need to formally describe what a "state" and a piece of symbols in the tap means, the definition of the machine cannot tell you anything about it. The lambda calculus on the other hand, has full of denotational semantics, but hard to define operational sementic - a single substitution can be arbitary complicated, and the order of reduction is unspeified.
 
-# What is continuation?
+Lincoln has simple operational sementic: the state transition is deterministic, and is always O(1). However it is also have native denotation semantics. In Lincoln, values are not simple symbols like in the Turing machine. They are black boxes that can carry meaning and internal states.
 
-In other languages you have functions, which you get a value back from calling a function. A function works on a stack, and a stack is a special kind of data: the size is dynamic. In Lincoln, all values are like the stack, even the "return
+# Features
+
+* Minimalism: minimal build-in operations (`Jmp`,`Ret`,`Call`), minimal build-in types (closure types).
+* Simple interpreting: the fully functional interpretor is about 1000 line of Rust code, includes the full type definition, thanks to the minimalism design.
+
+In additional, unlike other programming platforms, Lincoln does not look for a big "std" library. Instead, every Lincoln program is supposed to be isolated, abstracted building blocks that rely on the outside world to supply basic operations. It only garantee that, as long as the external provided did their part, a Lincoln program will do what it supposed to do.
 
 # Concepts
 
-## Permutation
-
-When a continuation is going to be executed, we use permutations to reorder the values. We use the Fisher and Yate's algorithm (but instead of generate the number randomly, specify the number) to map a permutation into a set of numbers, then map these numbers into a single number, stored in a 64 bit unsigned number.
-
-As a result of a 64 bit number cannot present a number greater than 20!, we limit the number of values to 20.
-
 ## Context
 
-A context is a set of values. In theory, we allow any number of values in a contexts. For the reason that we do not allow permutations for more than 20 elements, we limit the number of elements of a context to 20.
+A context is a set of values. The basic operation over a context includes: split a context into two, or merge two context into one, or take a value out from a context, or use a permutation to reorder the values. Both should be O(1) operation.
+
+How to represent a context is up to the intepretor. In this demostrate intepretor we represent it as a vector, but it can be the set of registries of a CPU, or a piece of memory, or cookies from a website, or anything.
 
 ## Values
 
-A contaxt can contain the following values:
+The values in a context can be categoried into two:
 
-* Closure. A closure contains a reference to a group of code entry, and a set of "captured" values, stored in a context.
-* Wrapped. A wrapped value presents a value that is only undersood by the execution engine. In this demostration this can be anything that is `Any`.
-* FinalReceiver. This represents a special value that was provided by the execution engine only. When it was evaluated the program execution ends normally.
+* Closures. This is the only "build-in" type of Lincoln. They can be created and executed (used) within Lincoln. It is suprisingly rich and is able to represent types that are familier to other languages, includeing 
+ 
+  * Tuples or product types
+  * Enums or sum types
+  * Intersection types or objects with multiple consuming methods
 
-## Code entries
+* External types. Lincoln does not understand those types and so any attempt to drop or execute them will result in error. They can only be produced and consumed by external code.
 
-A program contains a set of code entries, or instructions. There are 4 different kind of code entries:
+## Permutation
 
-* Jump. After performing a permutation on the current context, jump to another entry or an external function.
-* Call. Create a value in the current context with part or the current context, and a group of entries or external functions. Then jump to another entry or external function.
-* Ret. Evaluate the first closure value in the current context. A specified "variant" is use to pick one entry from the group.
+When a continuation is going to be executed, we use permutations to reorder the values. We use the Fisher and Yate's algorithm (but instead of generate the number randomly, specify the number) to map a permutation into a set of numbers, then map these numbers into a single number.
+
+Implementations of intepretor will need to support at least 6 variables, as this is what a 8-bit integer can represent for a permutation.
+
+## Instruction set
+
+A program contains a set of code entries, or instructions. There are 3 different kind of code entries:
+
+* Jump. After performing a permutation on the current context, jump to another entry or an external function. It have to specify where it will jumpt to. 
+* Call. Create a value in the current context with part or the current context, and a group of entries or external functions. Then jump to another entry or external function. It have to specify which entry to call, and after that where to return. 
+* Ret. Take a value out from the context, then execute the value with the rest of the current context, on the specified variant. If the value is a closure, this means the specified varient of the entry group will be used, and the captured values will be merged with the current context.
+
+Every code entries are refered by a name. 
 
 ## Code references
 
@@ -131,12 +143,53 @@ Result(1/1): 3628800
 ```
 
 # Future development
-We have a lot to do
 
-* Seperate the core engine into a lib module, making it independent to the external function sets.
-* Introduce a type system and make the human input language easier to use.
-* Instead of interpreting, compile it to another language or binary. One potential target is Webassembly.
-* Futher examples to come!
+
+The minimalism design of Lincoln means that the current IR will be likely be freezed like it is right now. Some thoughts
+
+* Copiable types - they are provided by external entries - a "copy" entry
+ can always copy the value. Furthermore, a "copiable" closure is possible if all variables it captures are copiable: it is simply a closure that have one extra variant that copies its captured variables.
+* Dropable types - same as copiable. they can be a external type, or it can be an extra variant that does nothing.
+
+## A proposal of high level language
+
+If we represent the `fact` example above in a high level language that is python-like, it would looks like
+
+```python
+fact c n := # a definition of `fact`, takes variable `c` and `n`
+    f =     # an assignment, which is always lazy
+        call c n := fact c n # a definition of a variant "call"
+        drop c := c          # another variant "drop"
+    zero -> z                # an invocation, result are in `z`
+    one -> o                 # `zero` and `one` are external
+    copy_int n -> n1 n2      # `copy_int` is external
+    eq n1 z                  # Without the array, the group of variants simple values only
+        equals :=
+            drop n2 ->       # `drop` is external
+            f.drop ->        # call the `drop` variant of f
+            c o              # the final statement
+        not_equal := 
+            copy_int n2 -> n1 n2
+            minus n1 o -> n    # minus is external
+            c = _ n :=         # Assign a closure to `c`
+                mul n n2 -> n  # mul is external
+                c n
+            f.call c n         # call the `call` variant of f (recursion)
+```
+The above example demostrates the basic idea:
+
+* All variable have to be defined once, and use once
+* An inner scope can shadow the same variable in the outer. In such a case, the outer variable are not captured so it is still valid and have to be used somewhere else.
+* Assignments are lazy, and invocations are eager. Both can be used to define variables.
+* The right hand side of an assignment is a closure. The first variant of a closure can be unnamed.
+
+# Further plans
+
+The language in the above is not statically typed, but we should be able to have a type system for it.
+
+## Lifetimes? Borrow checker?
+
+If talking about the future statically typed language, yes they will be considered. Otherwise, it is not hard to image a dynamically typed language like the above that checking it at runtime.
 
 # Contact me!
 
