@@ -191,6 +191,12 @@ The language in the above is not statically typed, but we should be able to have
 
 If talking about the future statically typed language, yes they will be considered. Otherwise, it is not hard to image a dynamically typed language like the above that checking it at runtime.
 
+# Prior Arts
+
+Needless to say again Lincoln is something in between Turing machine and Lambda calculus. 
+
+There is also another similar idea like [B Geron's continuation calculus](https://www.google.com/url?sa=t&rct=j&q=&esrc=s&source=web&cd=12&cad=rja&uact=8&ved=2ahUKEwjgvP7u3KThAhVWWH0KHR5_AjcQFjALegQIBBAC&url=https%3A%2F%2Farxiv.org%2Fpdf%2F1309.1257&usg=AOvVaw32VPkxNu1DMiZu0v3h0MIZ). My system is different because it is linear: B Geron's system allows to copy and drop terms freely, but my system do not.
+
 # Contact me!
 
 If you are interested in this project, please feel free to contact me through 
