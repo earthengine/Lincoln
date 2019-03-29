@@ -1,27 +1,22 @@
-fact3: call copy_int 1 fact4
-fact2: jmp fact3 #!ba
-fact1: call fact2 3 zero
-fact19: group fact fact23
-fact: call fact1 2 fact19
-fact20: ret 0
-fact23: jmp fact20 #!ba
-fact4: jmp fact5 #!aecdb
-fact5: call eq 2 fact6
-fact6: group fact7 fact11
-fact7: jmp fact8 #!cba
-fact11: call fact12 3 one
-fact8: call drop_int 1 fact9
-fact12: jmp fact13 #!cba
-fact9: call fact25 1 fact10
-fact13: call copy_int 1 fact14
-fact25: jmp fact22 #!ba
-fact10: call fact23 1 one
-fact22: ret 1
-fact14: jmp fact15 #!aecdb
-fact15: call minus 2 fact16
-fact16: jmp fact17 #!ba
-fact17: call fact24 2 fact18
-fact24: jmp fact20 #!cba
-fact18: jmp mul #!acb
+fact: call fact4 2 fact1 // [c n] #16
+fact1: group fact fact2 
+    fact2: jmp fact3 #!ba // [c n]
+    fact3: ret 0 // [n c]
+fact4: jmp fact5 #!ba // [c n f] #14
+fact5: call copy_int 1 fact6 // [n c f] #11
+fact6: call fact7 4 one // [n1 n2 c f] #8
+fact7: jmp fact8 #!aecdb // [n1 n2 c f o] #5
+fact8: call try_minus 2 fact9 // [n1 o c f n2] #1
+fact9: group fact10 fact15
+    fact10: jmp fact11 #!cadb // [n c f n2]
+    fact11: call fact12 2 mul // [f n n2 c]
+    fact12: jmp fact13 #!cba // [f n c]
+    fact13: ret 0 // [c n f]
+fact15: jmp fact16 #!aedbc // [n1 o c f n2] #17
+fact16: call drop_int 1 fact17 // [n1 n2 f o c ] #15
+fact17: call drop_int 1 fact18 // [n2 f o c]
+fact18: call fact19 1 fact3 // [f o c]
+fact19: jmp fact20 #!ba // [f c]
+fact20: ret 1 // [c f]
 
 export fact

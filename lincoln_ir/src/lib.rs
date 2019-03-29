@@ -10,5 +10,8 @@ mod codemap;
 mod entry;
 mod program;
 
+#[cfg(test)]
+mod tests;
+
 pub use entry::{Entry, EntryRef};
 pub use program::PreCompileProgram;

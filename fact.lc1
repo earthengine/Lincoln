@@ -1,19 +1,19 @@
-#[export] fact c n :=
+export fact
+
+fact c n :=
     f =
-        call c n := fact c n
+        call == fact
         drop c := c
     copy_int n -> n1 n2
-    zero -> z
-    eq n1 z ->
-        equals :=
-            drop n2 ->
-            f.drop ->
-            c
-        not_equal := 
-            one -> o
-            copy_int n2 -> n1 n2
-            minus n1 one -> n
+    one -> o
+    try_minus n1 o ->
+        ok n :=
             c = _ n :=
                 mul n n2 -> n
                 c n
             f.call c n
+        err n o :=
+            drop_int n ->
+            drop_int n2 ->
+            f.drop ->
+            c o
