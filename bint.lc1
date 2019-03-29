@@ -21,7 +21,7 @@ copy n c :=
             n2 = _ c:= c.even n2
             c n1 n2
 
-imc_v n c :=
+inc_v n c :=
     n
         zero := 
             n = _ c:= c.zero
@@ -111,3 +111,28 @@ add_n m n c :=
                     add m n -> m
                     inc m -> m
                     c.even m
+
+double_n m c :=
+    m
+        zero := c.zero
+        odd n := 
+            n = time_2_n n
+            c.even n
+        even n :=
+            n = _ c := c.odd n
+            c.even n
+
+mul_n m n c :=
+    m
+        zero := c.zero
+        odd m :=
+            copy m -> m1, m2
+            n = mul_n n m1
+            n = double_n n
+            add_n n m2 c
+        even m :=
+            copy m -> m1 m2
+            n = mul_n n m1
+            n = add_n m n
+            n = double_n n c
+

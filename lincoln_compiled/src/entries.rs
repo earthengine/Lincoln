@@ -2,7 +2,7 @@ use crate::coderef::{CodeRef, GroupRef};
 use crate::permutation::Permutation;
 use crate::program::Program;
 use crate::value::{Context, Value};
-use failure::Error;
+use crate::EvalError;
 use smallvec::SmallVec;
 
 use std::hash::{Hash, Hasher};
@@ -10,21 +10,21 @@ use std::hash::{Hash, Hasher};
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
 pub enum EvalFn {
-    Stateless(fn(&Program, Context) -> Result<(CodeRef, Context), Error>),
-    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>),
+    Stateless(fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>),
+    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>>),
 }
 impl EvalFn {
-    pub fn eval(&self, prog: &Program, ctx: Context) -> Result<(CodeRef, Context), Error> {
+    pub fn eval(&self, prog: &Program, ctx: Context) -> Result<(CodeRef, Context), EvalError> {
         match self {
             EvalFn::Stateless(f) => f(prog, ctx),
             EvalFn::Dyn(bf) => bf(prog, ctx),
         }
     }
-    pub fn stateless(f: fn(&Program, Context) -> Result<(CodeRef, Context), Error>) -> Self {
+    pub fn stateless(f: fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>) -> Self {
         EvalFn::Stateless(f)
     }
     pub fn stateful(
-        bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), Error>>,
+        bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>>,
     ) -> Self {
         EvalFn::Dyn(bf)
     }

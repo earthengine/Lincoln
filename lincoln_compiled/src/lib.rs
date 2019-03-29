@@ -16,8 +16,8 @@ mod program;
 mod value;
 
 pub use coderef::{CodeRef, GroupRef};
-pub use entries::{ExternEntry, EvalFn, ValueFn};
-pub use error::BuildError;
+pub use entries::{EvalFn, ExternEntry, ValueFn};
+pub use error::{BuildError, CodeRefError, EvalError, ValueAccessError};
 pub use lincoln_common::traits::Access;
 pub use permutation::{AsPermutation, Permutation};
 pub use program::Program;

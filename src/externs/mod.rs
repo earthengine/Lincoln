@@ -70,7 +70,7 @@ macro_rules! eval_fn {
                 lincoln_compiled::CodeRef,
                 lincoln_compiled::Context,
             ),
-            failure::Error,
+            lincoln_compiled::EvalError,
         > {
             $ctx.expect_args($varcnt)?;
             let $cont = $ctx.pop()?;
@@ -95,7 +95,7 @@ macro_rules! eval_fn_untyped {
         pub fn $name(
             $prog: &lincoln_compiled::Program,
             mut $ctx: lincoln_compiled::Context,
-        ) -> Result<(lincoln_compiled::CodeRef, lincoln_compiled::Context), failure::Error> {
+        ) -> Result<(lincoln_compiled::CodeRef, lincoln_compiled::Context), lincoln_compiled::EvalError> {
             $ctx.expect_args($varcnt)?;
             var_pop!($ctx,[$($var),*]);
 
@@ -117,7 +117,7 @@ macro_rules! eval_fn_untyped {
 macro_rules! eval_fn_term {
     ($name:ident($prog:ident,$ctx:ident), [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
 pub fn $name($prog: &lincoln_compiled::Program, mut $ctx: lincoln_compiled::Context) ->
-    Result<(lincoln_compiled::CodeRef, lincoln_compiled::Context), failure::Error>
+    Result<(lincoln_compiled::CodeRef, lincoln_compiled::Context), lincoln_compiled::EvalError>
 {
     var_unwrap!($ctx, $prog, [$($var),*]:[$($typ),*]);
 

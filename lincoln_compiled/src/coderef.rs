@@ -1,7 +1,6 @@
 use crate::entries::{CodeGroup, Entry, ExternEntry};
 use crate::program::Program;
-use crate::BuildError;
-use failure::Error;
+use crate::{BuildError, CodeRefError, EvalError};
 use lincoln_common::traits::Access;
 
 /// CodeRef is a type refer to a single executable entry.
@@ -72,8 +71,8 @@ impl CodeRef {
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EntryRef(pub usize);
 impl EntryRef {
-    pub fn not_found(&self) -> Error {
-        format_err!("entry not found: {}", self.0)
+    pub fn not_found(&self) -> CodeRefError {
+        CodeRefError::EntryNotFound { index: *self }
     }
     pub fn new_coderef(index: usize) -> CodeRef {
         EntryRef(index).into()
@@ -108,8 +107,8 @@ impl<'a> Access<'a, Program> for EntryRef {
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ExternRef(pub usize);
 impl ExternRef {
-    pub fn not_found(&self) -> Error {
-        format_err!("extern reference not found {:?}", self)
+    pub fn not_found(&self) -> CodeRefError {
+        CodeRefError::ExternNotFound { index: *self }
     }
     pub fn new_coderef(index: usize) -> CodeRef {
         ExternRef(index).into()
@@ -190,11 +189,14 @@ impl GroupRef {
         }
         Ok(p.groups[*i].push(c))
     }
-    pub(crate) fn get_vec(&self, p: &Program) -> Result<CodeGroup, Error> {
+    pub(crate) fn get_vec(&self, p: &Program) -> Result<CodeGroup, EvalError> {
         let GroupRef(i) = self;
         if *i > p.groups.len() {
-            bail!("Invalid group index {}", i)
+            Err(EvalError::CodeRef(CodeRefError::InvalidGroupIndex {
+                index: *i as u8,
+            }))
+        } else {
+            Ok(p.groups[*i].clone())
         }
-        Ok(p.groups[*i].clone())
     }
 }

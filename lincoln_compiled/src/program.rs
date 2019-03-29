@@ -1,7 +1,7 @@
 use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
 use crate::value::{closure_prog, Context};
-use crate::{BuildError, Permutation};
+use crate::{BuildError, EvalError, Permutation};
 use failure::Error;
 use lincoln_common::traits::{Access, StringLike};
 
@@ -141,7 +141,7 @@ impl Program {
         }
         Ok(())
     }
-    pub fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), Error> {
+    pub fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), EvalError> {
         debug!("eval {:?} {:?}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {
@@ -163,20 +163,20 @@ impl Program {
                     let v = ctx.pop()?;
                     v.eval(self, ctx, *variant)
                 }
-                _ => Err(ent.not_found()),
+                _ => Err(ent.not_found().into()),
             },
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(self) {
                     if let ExternEntry::Eval { ref eval, .. } = ext {
                         eval.eval(self, ctx)
                     } else {
-                        bail!("Returning to a value extern")
+                        Err(EvalError::ReturnToExtern.into())
                     }
                 } else {
-                    Err(ext.not_found())
+                    Err(ext.not_found().into())
                 }
             }
-            CodeRef::Termination => bail!("Eval on termination"),
+            CodeRef::Termination => Err(EvalError::EvalOnTermination.into()),
         }
     }
 }

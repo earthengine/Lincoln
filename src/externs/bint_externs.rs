@@ -1,4 +1,4 @@
-use lincoln_compiled::ExternEntry;
+use lincoln_compiled::{EvalError, ExternEntry};
 
 eval_fn_untyped!(_from(p, c), 2, [v, cont], {
     let v = lincoln_compiled::unwrap::<usize>(v, p)?;
@@ -66,7 +66,7 @@ eval_fn_untyped!(_count(p, c), 2, [cont, v], {
                 0 => _onzero(p, c),
                 1 => _onodd(p, c),
                 2 => _oneven(p, c),
-                _ => bail!("Variant out of range: {}", v),
+                n => return Err(EvalError::VariantOutOfBound { given: n, max: 2 }),
             }
         },
     ));
