@@ -193,7 +193,7 @@ impl GroupRef {
         let GroupRef(i) = self;
         if *i > p.groups.len() {
             Err(EvalError::CodeRef(CodeRefError::InvalidGroupIndex {
-                index: *i as u8,
+                index: *self,
             }))
         } else {
             Ok(p.groups[*i].clone())

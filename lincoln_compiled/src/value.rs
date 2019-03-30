@@ -58,7 +58,7 @@ impl Value for Closure {
                     Err(CodeRefError::ExternNotFound { index: ext }.into())
                 }
             }
-            _ => Err(ValueAccessError::CodeRefNotExtern.into()),
+            _ => Err(CodeRefError::CodeRefNotExtern.into()),
         }
     }
 }
@@ -94,11 +94,10 @@ impl Context {
     ///
     pub fn expect_args(&self, args: u8) -> Result<(), EvalError> {
         if self.len() != args {
-            return Err(ValueAccessError::UnexpectedArgs {
+            return Err(EvalError::UnexpectedArgs {
                 expect: args,
                 actual: self.len(),
-            }
-            .into());
+            });
         } else {
             Ok(())
         }
