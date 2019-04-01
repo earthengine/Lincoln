@@ -9,7 +9,7 @@ eval_fn_untyped!(_from(p, c), 2, [v, cont], {
         let n = (v - 1) / 2;
         c.push(lincoln_compiled::native_closure(
             "from",
-            move |p, mut c, _| {
+            move |p, c, _| {
                 c.push(lincoln_compiled::wrap(n));
                 _from(p, c)
             },
@@ -19,7 +19,7 @@ eval_fn_untyped!(_from(p, c), 2, [v, cont], {
         let n = (v - 2) / 2;
         c.push(lincoln_compiled::native_closure(
             "from",
-            move |p, mut c, _| {
+            move |p, c, _| {
                 c.push(lincoln_compiled::wrap(n));
                 _from(p, c)
             },
@@ -37,7 +37,7 @@ eval_fn!(_onodd_result(p, c), 2, cont, [v]: [usize], {
 });
 eval_fn_untyped!(_onodd(p, c), 2, [cont, v], {
     c.push(v);
-    c.push(lincoln_compiled::native_closure("onodd", |p, mut c, _| {
+    c.push(lincoln_compiled::native_closure("onodd", |p, c, _| {
         c.push(cont);
         _onodd_result(p, c)
     }));
@@ -49,7 +49,7 @@ eval_fn!(_oneven_result(p, c), 2, cont, [v]: [usize], {
 });
 eval_fn_untyped!(_oneven(p, c), 2, [cont, v], {
     c.push(v);
-    c.push(lincoln_compiled::native_closure("oneven", |p, mut c, _| {
+    c.push(lincoln_compiled::native_closure("oneven", |p, c, _| {
         c.push(cont);
         _oneven_result(p, c)
     }));
@@ -60,7 +60,7 @@ eval_fn_untyped!(_count(p, c), 2, [cont, v], {
 
     c.push(lincoln_compiled::native_closure(
         "cont_handler",
-        |p, mut c, v| {
+        |p, c, v| {
             c.push(cont);
             match v {
                 0 => _onzero(p, c),

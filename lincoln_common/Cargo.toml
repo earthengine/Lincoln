@@ -3,5 +3,7 @@ name = "lincoln_common"
 version = "0.1.0"
 authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
+description = "Common functions, traits for Lincoln"
+license = "MIT"
 
 [dependencies]

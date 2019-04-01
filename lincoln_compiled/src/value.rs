@@ -12,9 +12,9 @@ pub trait Value: AnyDebug {
     fn eval(
         self: Box<Self>,
         p: &Program,
-        ctx: Context,
+        ctx: &mut Context,
         variant: u8,
-    ) -> Result<(CodeRef, Context), EvalError>;
+    ) -> Result<CodeRef, EvalError>;
     fn into_wrapped(self: Box<Self>, prog: &Program) -> Result<Box<dyn Value>, EvalError>;
 }
 struct Closure(SmallVec<[CodeRef; 5]>, Context);
@@ -27,9 +27,9 @@ impl Value for Closure {
     fn eval(
         mut self: Box<Self>,
         _: &Program,
-        mut ctx: Context,
+        ctx: &mut Context,
         variant: u8,
-    ) -> Result<(CodeRef, Context), EvalError> {
+    ) -> Result<CodeRef, EvalError> {
         ctx.append(&mut self.1);
         if variant as usize >= self.0.len() {
             Err(EvalError::VariantOutOfBound {
@@ -37,7 +37,7 @@ impl Value for Closure {
                 max: self.0.len() as u8,
             })
         } else {
-            Ok((self.0[variant as usize].clone(), ctx))
+            Ok(self.0[variant as usize].clone())
         }
     }
     fn into_wrapped(self: Box<Self>, prog: &Program) -> Result<Box<dyn Value>, EvalError> {
@@ -123,7 +123,7 @@ impl Context {
     ///
     /// at: where to split up
     ///
-    pub fn split(mut self, at: u8) -> Result<(Self, Self), ValueAccessError> {
+    pub fn split(&mut self, at: u8) -> Result<Self, ValueAccessError> {
         if at as usize > self.0.len() {
             return Err(ValueAccessError::SplitOutOfRange {
                 at,
@@ -131,10 +131,8 @@ impl Context {
             });
         }
         let r = self.0.split_off(at as usize);
-        let s0 = std::mem::replace(&mut self.0, vec![]);
-        let ctx1 = Context(s0);
         let ctx2 = Context(r);
-        Ok((ctx1, ctx2))
+        Ok(ctx2)
     }
     /// Store one more value to the context. The lenghth increases
     /// by 1.
@@ -185,9 +183,9 @@ where
     fn eval(
         self: Box<Self>,
         _: &Program,
-        _: Context,
+        _: &mut Context,
         _: u8,
-    ) -> Result<(CodeRef, Context), EvalError> {
+    ) -> Result<CodeRef, EvalError> {
         Err(EvalError::CallingWrapped)
     }
     fn into_wrapped(self: Box<Self>, _: &Program) -> Result<Box<dyn Value>, EvalError> {
@@ -214,7 +212,7 @@ where
 struct WrappedFn<F>(String, F);
 impl<F> Debug for WrappedFn<F>
 where
-    F: FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), EvalError>,
+    F: FnOnce(&Program, &mut Context, u8) -> Result<CodeRef, EvalError>,
 {
     fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
         write!(fmt, "{}", self.0)
@@ -222,14 +220,14 @@ where
 }
 impl<F> Value for WrappedFn<F>
 where
-    F: FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), EvalError> + 'static,
+    F: FnOnce(&Program, &mut Context, u8) -> Result<CodeRef, EvalError> + 'static,
 {
     fn eval(
         self: Box<Self>,
         p: &Program,
-        ctx: Context,
+        ctx: &mut Context,
         variant: u8,
-    ) -> Result<(CodeRef, Context), EvalError> {
+    ) -> Result<CodeRef, EvalError> {
         self.1(p, ctx, variant)
     }
     fn into_wrapped(self: Box<Self>, _: &Program) -> Result<Box<dyn Value>, EvalError> {
@@ -238,7 +236,7 @@ where
 }
 pub fn native_closure(
     name: impl Into<String>,
-    f: impl FnOnce(&Program, Context, u8) -> Result<(CodeRef, Context), EvalError> + 'static,
+    f: impl FnOnce(&Program, &mut Context, u8) -> Result<CodeRef, EvalError> + 'static,
 ) -> Box<dyn Value> {
     Box::new(WrappedFn(name.into(), f))
 }

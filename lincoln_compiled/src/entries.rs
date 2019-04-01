@@ -10,21 +10,21 @@ use std::hash::{Hash, Hasher};
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
 pub enum EvalFn {
-    Stateless(fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>),
-    Dyn(Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>>),
+    Stateless(for<'a,'b> fn(&'a Program, &'b mut Context) -> Result<CodeRef, EvalError>),
+    Dyn(Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>),
 }
 impl EvalFn {
-    pub fn eval(&self, prog: &Program, ctx: Context) -> Result<(CodeRef, Context), EvalError> {
+    pub fn eval<'a,'b>(&self, prog: &'a Program, ctx: &'b mut Context) -> Result<CodeRef, EvalError> {
         match self {
             EvalFn::Stateless(f) => f(prog, ctx),
-            EvalFn::Dyn(bf) => bf(prog, ctx),
+            EvalFn::Dyn(bf) => bf(ctx),
         }
     }
-    pub fn stateless(f: fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>) -> Self {
+    pub fn stateless(f: for<'a, 'b> fn(&'a Program, &'b mut Context) -> Result<CodeRef, EvalError>) -> Self {
         EvalFn::Stateless(f)
     }
     pub fn stateful(
-        bf: Box<dyn Fn(&Program, Context) -> Result<(CodeRef, Context), EvalError>>,
+        bf: Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>,
     ) -> Self {
         EvalFn::Dyn(bf)
     }

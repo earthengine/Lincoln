@@ -328,7 +328,7 @@ impl CommandContext {
     }
     fn step(&mut self, _c: Captures) -> Result<bool, Error> {
         use CommandContext::*;
-        let (program, compiled, context, current, round) = match self {
+        let (program, compiled, mut context, current, round) = match self {
             Stepping {
                 compiled,
                 context,
@@ -338,8 +338,7 @@ impl CommandContext {
             } => (program, compiled, context, current, round),
             _ => bail!("Not in stepping mode. Run the program in step mode first."),
         };
-        let ctx1 = std::mem::replace(context, Default::default());
-        let (next, ctx1) = compiled.eval(ctx1, &current)?;
+        let next = compiled.eval(&mut context, &current)?;
         *round += 1;
         if let CodeRef::Termination = next {
             *self = Idle {
@@ -347,8 +346,7 @@ impl CommandContext {
                 compiled: Some(std::mem::replace(compiled, Default::default())),
             }
         } else {
-            println!("{}: {:?} {:?}", round, next, ctx1);
-            *context = ctx1;
+            println!("{}: {:?} {:?}", round, next, context);
             *current = next;
         }
         Ok(true)

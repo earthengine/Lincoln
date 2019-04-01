@@ -116,13 +116,13 @@ impl Program {
     }
     pub fn run(
         &self,
-        ctx: Context,
+        mut ctx: Context,
         export_label: impl StringLike,
         variant: u8,
         rounds: Option<usize>,
     ) -> Result<(), Error> {
         let ent = self.get_export_ent(export_label, variant)?;
-        let mut evalresult = self.eval(ctx, &ent)?;
+        let mut evalresult = self.eval(&mut ctx, &ent)?;
         let (check_rounds, mut rounds) = (rounds.is_some(), rounds.unwrap_or(0));
         loop {
             if check_rounds && rounds == 0 {
@@ -131,8 +131,8 @@ impl Program {
             if check_rounds {
                 print!("{}: ", rounds);
             }
-            evalresult = self.eval(evalresult.1, &evalresult.0)?;
-            if let CodeRef::Termination = evalresult.0 {
+            evalresult = self.eval(&mut ctx, &evalresult)?;
+            if let CodeRef::Termination = evalresult {
                 break;
             }
             if check_rounds {
@@ -141,23 +141,23 @@ impl Program {
         }
         Ok(())
     }
-    pub fn eval(&self, mut ctx: Context, ent: &CodeRef) -> Result<(CodeRef, Context), EvalError> {
+    pub fn eval(&self, ctx: &mut Context, ent: &CodeRef) -> Result<CodeRef, EvalError> {
         debug!("eval {:?} {:?}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {
                     ctx.permutate(*per);
-                    Ok((cont.clone(), ctx))
+                    Ok(cont.clone())
                 }
                 Some(Entry::Call {
                     call,
                     cont,
                     num_args,
                 }) => {
-                    let (mut c1, c2) = ctx.split(*num_args)?;
+                    let c2 = ctx.split(*num_args)?;
                     let v = closure_prog(*cont, c2, self)?;
-                    c1.push(v);
-                    Ok((call.clone(), c1))
+                    ctx.push(v);
+                    Ok(call.clone())
                 }
                 Some(Entry::Return { variant }) => {
                     let v = ctx.pop()?;

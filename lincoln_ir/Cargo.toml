@@ -3,6 +3,8 @@ name = "lincoln_ir"
 version = "0.1.0"
 authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
+description = "Intermediate representation of Lincoln"
+license = "MIT"
 
 [dependencies]
 log="0.4"
