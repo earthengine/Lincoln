@@ -2,7 +2,7 @@ use crate::coderef::{CodeRef, GroupRef};
 use crate::entries::ExternEntry;
 use crate::permutation::Permutation;
 use crate::program::Program;
-use crate::{CodeRefError, EvalError, ValueAccessError};
+use crate::{EvalError, ValueAccessError};
 use core::fmt::Debug;
 use core::fmt::Formatter;
 use lincoln_common::traits::{Access, AnyDebug};
@@ -15,7 +15,7 @@ pub trait Value: AnyDebug {
         ctx: &mut Context,
         variant: u8,
     ) -> Result<CodeRef, EvalError>;
-    fn into_wrapped(self: Box<Self>, prog: &Program) -> Result<Box<dyn Value>, EvalError>;
+    fn into_wrapped(self: Box<Self>, prog: &Program) -> Option<Box<dyn Value>>;
 }
 struct Closure(SmallVec<[CodeRef; 5]>, Context);
 impl Debug for Closure {
@@ -40,25 +40,25 @@ impl Value for Closure {
             Ok(self.0[variant as usize].clone())
         }
     }
-    fn into_wrapped(self: Box<Self>, prog: &Program) -> Result<Box<dyn Value>, EvalError> {
+    fn into_wrapped(self: Box<Self>, prog: &Program) -> Option<Box<dyn Value>> {
         if self.1.len() > 0 {
-            return Err(ValueAccessError::UnwrappingNonEmptyClosure.into());
+            return None;
         }
         if self.0.len() != 1 {
-            return Err(ValueAccessError::UnwrappingMultivariantClosure.into());
+            return None;
         }
         match self.0[0] {
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(prog) {
                     match ext {
-                        ExternEntry::Value { value, .. } => Ok(value.get_value()),
-                        _ => Err(ValueAccessError::ExternNotValue.into()),
+                        ExternEntry::Value { value, .. } => Some(value.get_value()),
+                        _ => None,
                     }
                 } else {
-                    Err(CodeRefError::ExternNotFound { index: ext }.into())
+                    None
                 }
             }
-            _ => Err(CodeRefError::CodeRefNotExtern.into()),
+            _ => None,
         }
     }
 }
@@ -188,8 +188,8 @@ where
     ) -> Result<CodeRef, EvalError> {
         Err(EvalError::CallingWrapped)
     }
-    fn into_wrapped(self: Box<Self>, _: &Program) -> Result<Box<dyn Value>, EvalError> {
-        Ok(self)
+    fn into_wrapped(self: Box<Self>, _: &Program) -> Option<Box<dyn Value>> {
+        Some(self)
     }
 }
 pub fn wrap<T>(t: T) -> Box<dyn Value>
@@ -202,7 +202,8 @@ pub fn unwrap<T>(v: Box<dyn Value>, prog: &Program) -> Result<T, EvalError>
 where
     T: AnyDebug,
 {
-    Ok(v.into_wrapped(prog)?
+    Ok(v.into_wrapped(prog)
+        .ok_or(EvalError::from(ValueAccessError::UnwrapNotWrapped))?
         .into_boxed_any()
         .downcast::<Wrapped<T>>()
         .map_err(|_| ValueAccessError::UnwrapNotWrapped)?
@@ -230,8 +231,8 @@ where
     ) -> Result<CodeRef, EvalError> {
         self.1(p, ctx, variant)
     }
-    fn into_wrapped(self: Box<Self>, _: &Program) -> Result<Box<dyn Value>, EvalError> {
-        Err(ValueAccessError::CannotTurnIntoWrapped.into())
+    fn into_wrapped(self: Box<Self>, _: &Program) -> Option<Box<dyn Value>> {
+        None
     }
 }
 pub fn native_closure(
