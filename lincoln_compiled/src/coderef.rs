@@ -13,7 +13,7 @@ pub enum CodeRef {
     /// An entry refers to a entry point of a program.
     Entry(EntryRef),
     /// Refers to an external function entry defined in a program.
-    Extern(ExternRef),
+    Extern(ExternRef),    
     /// Indicate the end of execution.
     Termination,
 }
@@ -74,7 +74,7 @@ impl EntryRef {
     pub fn not_found(&self) -> CodeRefError {
         CodeRefError::EntryNotFound { index: *self }
     }
-    pub fn new_coderef(index: usize) -> CodeRef {
+    pub(crate) fn new_coderef(index: usize) -> CodeRef {
         EntryRef(index).into()
     }
 }
@@ -110,7 +110,7 @@ impl ExternRef {
     pub fn not_found(&self) -> CodeRefError {
         CodeRefError::ExternNotFound { index: *self }
     }
-    pub fn new_coderef(index: usize) -> CodeRef {
+    pub(crate) fn new_coderef(index: usize) -> CodeRef {
         ExternRef(index).into()
     }
 }
@@ -150,12 +150,17 @@ impl std::fmt::Debug for GroupRef {
     }
 }
 impl GroupRef {
-    /// Create a new group reference
-    ///
-    pub fn new(i: usize) -> GroupRef {
+    pub(crate) fn new(i: usize) -> GroupRef {
         GroupRef(i)
     }
-
+    pub(crate) fn count(self, prog: &Program) -> Option<u8> {
+        let GroupRef(i) = self;
+        let len = prog.groups.len();
+        if len <= i {
+            return None;
+        }
+        Some(prog.groups[i].len() as u8)
+    }
     /// From a program, retrive an entry from this group
     ///
     /// p: the program
@@ -178,6 +183,7 @@ impl GroupRef {
             }
         }
     }
+    /// Retrive the index value
     pub fn get_index(&self) -> usize {
         let GroupRef(i) = self;
         *i

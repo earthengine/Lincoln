@@ -1,6 +1,5 @@
 use crate::coderef::{CodeRef, GroupRef};
 use crate::permutation::Permutation;
-use crate::program::Program;
 use crate::value::{Context, Value};
 use crate::EvalError;
 use smallvec::SmallVec;
@@ -10,17 +9,17 @@ use std::hash::{Hash, Hasher};
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
 pub enum EvalFn {
-    Stateless(for<'a,'b> fn(&'a Program, &'b mut Context) -> Result<CodeRef, EvalError>),
+    Stateless(for<'a,'b> fn(&'b mut Context) -> Result<CodeRef, EvalError>),
     Dyn(Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>),
 }
 impl EvalFn {
-    pub fn eval<'a,'b>(&self, prog: &'a Program, ctx: &'b mut Context) -> Result<CodeRef, EvalError> {
+    pub fn eval<'a,'b>(&self, ctx: &'b mut Context) -> Result<CodeRef, EvalError> {
         match self {
-            EvalFn::Stateless(f) => f(prog, ctx),
+            EvalFn::Stateless(f) => f(ctx),
             EvalFn::Dyn(bf) => bf(ctx),
         }
     }
-    pub fn stateless(f: for<'a, 'b> fn(&'a Program, &'b mut Context) -> Result<CodeRef, EvalError>) -> Self {
+    pub fn stateless(f: for<'a, 'b> fn(&'b mut Context) -> Result<CodeRef, EvalError>) -> Self {
         EvalFn::Stateless(f)
     }
     pub fn stateful(

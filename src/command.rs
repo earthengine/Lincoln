@@ -285,8 +285,8 @@ impl CommandContext {
         let values = Self::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
         let mut ctx: Context = Default::default();
-        ctx.push(lincoln_compiled::native_closure("print", |p, c, _| {
-            print(p, c)
+        ctx.push(lincoln_compiled::native_closure("print", |c, _| {
+            print(c)
         }));
         for value in values {
             ctx.push(value);

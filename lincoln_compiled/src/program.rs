@@ -39,7 +39,7 @@ impl std::fmt::Debug for Program {
             }
             writeln!(fmt, "]")?;
         }
-        writeln!(fmt, "")
+        Ok(())
     }
 }
 impl Program {
@@ -161,16 +161,20 @@ impl Program {
                 }
                 Some(Entry::Return { variant }) => {
                     let v = ctx.pop()?;
-                    v.eval(self, ctx, *variant)
+                    v.eval(ctx, *variant)
                 }
                 _ => Err(ent.not_found().into()),
             },
             CodeRef::Extern(ext) => {
                 if let Some(ext) = ext.access(self) {
-                    if let ExternEntry::Eval { ref eval, .. } = ext {
-                        eval.eval(self, ctx)
-                    } else {
-                        Err(EvalError::ReturnToExtern.into())
+                    match ext {
+                        ExternEntry::Eval { ref eval, .. } => eval.eval(ctx),
+                        ExternEntry::Value { ref value, .. } => {
+                            ctx.expect_args(1)?;
+                            let c = ctx.pop()?;
+                            ctx.push(value.get_value());
+                            c.eval(ctx, 0)
+                        }
                     }
                 } else {
                     Err(ext.not_found().into())
