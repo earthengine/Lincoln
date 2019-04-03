@@ -230,7 +230,7 @@ impl CommandContext {
             "fact" => FACT_EXTERNS,
             "bint" => BINT_EXTERNS,
             _ => bail!("extern set not found: {}", externs),
-        };
+        }.iter().map(|f| f());
         use CommandContext::*;
         match self {
             Idle {

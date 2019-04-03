@@ -1,5 +1,7 @@
 use crate::coderef::{EntryRef, ExternRef, GroupRef};
 
+use failure::Error;
+
 #[derive(Fail, Debug)]
 pub enum BuildError {
     #[fail(display = "Group {:?} not found", _0)]
@@ -27,6 +29,8 @@ pub enum EvalError {
     CodeRef(CodeRefError),
     #[fail(display = "{}", _0)]
     ValueAccess(ValueAccessError),
+    #[fail(display = "{}", _0)]
+    External(Error)
 }
 impl From<CodeRefError> for EvalError {
     fn from(e: CodeRefError) -> Self {

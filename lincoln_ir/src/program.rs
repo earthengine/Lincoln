@@ -2,10 +2,9 @@ use crate::codemap::CodeMap;
 use crate::entry::{Entry, EntryRef};
 use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
-use lincoln_common::traits::StringLike;
-use lincoln_common::traits::{Access, AccessMut};
+use lincoln_common::traits::{Access, AccessMut, StringLike};
 use lincoln_compiled::{AsPermutation, ExternEntry, Permutation, Program};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Serialize, Deserialize, Default)]
 pub struct PreCompileProgram {
@@ -236,7 +235,7 @@ impl PreCompileProgram {
     }
     /// Compile this program with a set of external functions
     ///
-    pub fn compile(&self, externs: impl AsRef<[fn() -> ExternEntry]>) -> Result<Program, Error> {
+    pub fn compile(&self, externs: impl Iterator<Item=ExternEntry>) -> Result<Program, Error> {
         let mut cm = CodeMap::new();
         let ds = self.dependency_sort();
         let sorted = ds
@@ -263,6 +262,11 @@ impl PreCompileProgram {
             }
             bail!("circular reference detected");
         }
+        let mut externs_map: HashMap<String, ExternEntry> = HashMap::new();
+        for ext in externs {
+            let name = ext.name().into();
+            externs_map.insert(name, ext);
+        }
         // Starting from the lowest level, we add compiled instructions to the compiled program.
         // 
         for (_level, entries) in ds {
@@ -271,8 +275,8 @@ impl PreCompileProgram {
                 let entry = entry.access(&self)?;
                 match entry {
                     Entry::Extern { name } => {
-                        if let Some(e) = externs.as_ref().iter().find(|e| (*e)().name() == name) {
-                            cm.add_extern(entryref, e());
+                        if let Some(e) = externs_map.remove(name) {
+                            cm.add_extern(entryref, e);
                         } else {
                             bail!("Extern entry not found {}", name);
                         }
