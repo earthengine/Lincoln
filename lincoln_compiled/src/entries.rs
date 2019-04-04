@@ -150,7 +150,7 @@ pub enum Entry {
 impl std::fmt::Display for Entry {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Entry::Jump { cont, per } => write!(fmt, "Jump {} !{}({})", cont, per, per),
+            Entry::Jump { cont, per } => write!(fmt, "Jump {} #!{}({:?})", cont, per, per),
             Entry::Call {
                 call,
                 cont,

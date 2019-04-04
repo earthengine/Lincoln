@@ -159,7 +159,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "lincoln_wasm_sh"
+name = "lincoln_wasm"
 version = "0.1.0"
 dependencies = [
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",

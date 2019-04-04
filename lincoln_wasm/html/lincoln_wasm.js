@@ -109,12 +109,12 @@ function getStringFromWasm(ptr, len) {
     return cachedTextDecoder.decode(getUint8Memory().subarray(ptr, ptr + len));
 }
 
-function __wbg_log_9cc36dee7e8c1e11(arg0, arg1) {
+function __wbg_log_681ac0dfc2193956(arg0, arg1) {
     let varg0 = getStringFromWasm(arg0, arg1);
     console.log(varg0);
 }
 
-__exports.__wbg_log_9cc36dee7e8c1e11 = __wbg_log_9cc36dee7e8c1e11;
+__exports.__wbg_log_681ac0dfc2193956 = __wbg_log_681ac0dfc2193956;
 /**
 * @returns {void}
 */
@@ -500,7 +500,7 @@ __exports.__wbindgen_object_drop_ref = __wbindgen_object_drop_ref;
 
 function init(module_or_path, maybe_memory) {
     let result;
-    const imports = { './lincoln_wasm_sh': __exports };
+    const imports = { './lincoln_wasm': __exports };
     if (module_or_path instanceof URL || typeof module_or_path === 'string' || module_or_path instanceof Request) {
 
         const response = fetch(module_or_path);
