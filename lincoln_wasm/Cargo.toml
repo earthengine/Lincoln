@@ -1,0 +1,19 @@
+[package]
+name = "lincoln_wasm"
+version = "0.1.0"
+authors = ["Joe Ren <earthengine@gmail.com>"]
+edition = "2018"
+description = "an interactive shall using web assembly to demostrate Lincoln"
+license = "MIT"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = {version="0.2",features=["serde-serialize"]}
+web-sys = {version="0.3", features=["Window", "Document", "Element", "HtmlElement", "Node"]}
+lincoln_ir = {version="1.0", path="../lincoln_ir"}
+lincoln_compiled = {version="1.0", path="../lincoln_compiled"}
+lincoln_common = {version="1.0", path="../lincoln_common"}
+failure = "0.1"
+js-sys = "0.3"

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<head>
+    <title>Hello World</title>
+    <meta charset="utf-8"/>
+    <style type="text/css">
+        #program {
+            width: 80em;
+            height: 50em;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <textarea id="program"></textarea>
+        <label for="input">Input: </label><input type="number" value="10" id="input">
+        <button id="run">Run</button>        
+        <p style="display: none;" id="result"></p>
+    </div>
+    <script type="module">
+        import { LincolnIntepretor, default as init } from './lincoln_wasm.js';
+        function add(i, j) {
+            return i+j;
+        }
+        function copy_int(i) {
+            return [i,i];
+        }
+        function try_minus(i, j) {
+            if(i>=j) {
+                return i-j;
+            } else {
+                throw [i, j];
+            }
+        }
+        function mul(i,j) {
+            return i*j;
+        }
+        function drop_int() {
+            return [];            
+        }
+
+        async function run() {
+            await init('./lincoln_wasm_bg.wasm');
+            const intepretor = LincolnIntepretor.new();
+            document.getElementById("run").addEventListener("click", () => {
+                const program = document.getElementById("program").value;
+                intepretor.set_program(JSON.parse(program));
+                intepretor.compile([copy_int,drop_int,try_minus,mul,{name: "one", value: 1}]);
+                const input = parseInt(document.getElementById("input").value);
+                intepretor.run("fact", 0, [input], true);
+                let steps = 1;
+                for(;;) {
+                    if (!intepretor.step()) { break; }
+                    steps++;
+                }
+                const result = document.getElementById("result");
+                result.style.display="block";
+                result.textContent = `result: ${intepretor.get_context()}\nsteps: ${steps}`;
+            });
+        }
+        run();
+    </script>
+</body>
+

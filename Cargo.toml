@@ -3,6 +3,8 @@ name = "lincoln"
 version = "0.1.0"
 authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
+description = "A low level programming language features linear types and direct manipulation of continuation (returning points)."
+license = "MIT"
 
 [dependencies]
 log="0.4"
@@ -14,6 +16,6 @@ failure="0.1"
 failure_derive="0.1"
 regex="1.1"
 rustyline="3.0"
-lincoln_common={path="lincoln_common"}
-lincoln_compiled={path="lincoln_compiled"}
-lincoln_ir={path="lincoln_ir"}
+lincoln_common={version="0.1", path="lincoln_common"}
+lincoln_compiled={version="0.1", path="lincoln_compiled"}
+lincoln_ir={version="0.1", path="lincoln_ir"}
