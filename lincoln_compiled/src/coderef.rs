@@ -44,10 +44,15 @@ impl PartialEq for CodeRef {
 }
 impl std::fmt::Debug for CodeRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
+    }
+}
+impl std::fmt::Display for CodeRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            CodeRef::Entry(e) => write!(fmt, "^{:?}", e),
-            CodeRef::Extern(e) => write!(fmt, "^{:?}", e),
-            CodeRef::Termination => write!(fmt, "^⟂"),
+            CodeRef::Entry(e) => write!(fmt, "{}", e),
+            CodeRef::Extern(e) => write!(fmt, "{}", e),
+            CodeRef::Termination => write!(fmt, "🛑"),
         }
     }
 }
@@ -80,7 +85,12 @@ impl EntryRef {
 }
 impl std::fmt::Debug for EntryRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "#{}", self.0)
+        write!(fmt, "🎯-{}", self.0)
+    }
+}
+impl std::fmt::Display for EntryRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{:?}", self)
     }
 }
 impl From<EntryRef> for CodeRef {
@@ -116,7 +126,12 @@ impl ExternRef {
 }
 impl std::fmt::Debug for ExternRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "@{}", self.0)
+        write!(fmt, "🗨-{}", self.0)
+    }
+}
+impl std::fmt::Display for ExternRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{:?}", self)
     }
 }
 impl From<ExternRef> for CodeRef {
@@ -146,7 +161,12 @@ impl<'a> Access<'a, Program> for ExternRef {
 pub struct GroupRef(usize);
 impl std::fmt::Debug for GroupRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "%{}", self.0)
+        write!(fmt, "🎎-{}", self.0)
+    }
+}
+impl std::fmt::Display for GroupRef {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{:?}", self)
     }
 }
 impl GroupRef {

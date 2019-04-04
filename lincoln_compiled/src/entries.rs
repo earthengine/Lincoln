@@ -63,10 +63,15 @@ pub enum ExternEntry {
     },
 }
 impl std::fmt::Debug for ExternEntry {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
+    }
+}
+impl std::fmt::Display for ExternEntry {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            ExternEntry::Eval { name, .. } => write!(fmt, "@{}", name),
-            ExternEntry::Value { name, .. } => write!(fmt, "@{}", name),
+            ExternEntry::Eval { name, .. } => write!(fmt, "🌐-{}", name),
+            ExternEntry::Value { name, .. } => write!(fmt, "🌏-{}", name),
         }
     }
 }
@@ -116,9 +121,14 @@ pub struct ExportEntry {
     pub name: String,
     pub g: GroupRef,
 }
+impl std::fmt::Display for ExportEntry {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}: {}", self.name, self.g)
+    }
+}
 impl std::fmt::Debug for ExportEntry {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        write!(fmt, "{}: {:?}", self.name, self.g)
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
     }
 }
 
@@ -138,34 +148,20 @@ pub enum Entry {
     },
 }
 impl std::fmt::Display for Entry {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            Entry::Jump { cont, per } => write!(fmt, "Jump #{} #!{}", cont.get_index(), per),
+            Entry::Jump { cont, per } => write!(fmt, "Jump {} !{}({})", cont, per, per),
             Entry::Call {
                 call,
                 cont,
                 num_args,
-            } => write!(
-                fmt,
-                "Call #{} {} #{}",
-                call.get_index(),
-                num_args,
-                cont.get_index()
-            ),
+            } => write!(fmt, "Call {} {} {}", call, num_args, cont),
             Entry::Return { variant } => write!(fmt, "Return {}", variant),
         }
     }
 }
 impl std::fmt::Debug for Entry {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
-        match self {
-            Entry::Jump { cont, per } => write!(fmt, "Jump {:?} !{:?}({})", cont, per, per),
-            Entry::Call {
-                call,
-                cont,
-                num_args,
-            } => write!(fmt, "Call {:?} {:?} {:?}", call, num_args, cont),
-            Entry::Return { variant } => write!(fmt, "Return {}", variant),
-        }
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(fmt, "{}", self)
     }
 }

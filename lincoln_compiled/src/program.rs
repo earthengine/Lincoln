@@ -16,28 +16,28 @@ impl std::fmt::Debug for Program {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
         writeln!(fmt, "\nentries:")?;
         for (idx, entry) in self.entries.iter().enumerate() {
-            writeln!(fmt, "\t#{}: {:?}", idx, entry)?;
+            writeln!(fmt, "\t🎯-{}: {}", idx, entry)?;
         }
         writeln!(fmt, "externs:")?;
         for (idx, ext) in self.externs.iter().enumerate() {
-            writeln!(fmt, "\t@{}: {:?}", idx, ext)?;
+            writeln!(fmt, "\t🗨-{}: {}", idx, ext)?;
         }
         writeln!(fmt, "exports:")?;
         for ext in self.exports.iter() {
-            writeln!(fmt, "\t{:?}", ext)?;
+            writeln!(fmt, "\t🚢-{}", ext)?;
         }
         writeln!(fmt, "groups:")?;
         let grps = self.groups.iter();
         for (idx, grp) in grps.enumerate() {
-            write!(fmt, "\t%{}: [", idx)?;
+            write!(fmt, "\t🎎-{}: {{", idx)?;
             let mut grp1 = grp.iter();
             if let Some(ent) = grp1.next() {
-                write!(fmt, "{:?}", ent)?;
+                write!(fmt, "{}", ent)?;
             }
             for ent in grp1 {
-                write!(fmt, ", {:?}", ent)?;
+                write!(fmt, ";{}", ent)?;
             }
-            writeln!(fmt, "]")?;
+            writeln!(fmt, "}}")?;
         }
         Ok(())
     }
@@ -50,6 +50,18 @@ impl Program {
             exports: vec![],
             groups: vec![],
         }
+    }
+    pub fn iterate_entries(&self) -> impl Iterator<Item=&Entry> {
+        self.entries.iter()
+    }
+    pub fn iterate_externs(&self) -> impl Iterator<Item=&ExternEntry> {
+        self.externs.iter()
+    }
+    pub fn iterate_groups(&self) -> impl Iterator<Item=&CodeGroup> {
+        self.groups.iter()
+    }
+    pub fn iterate_exports(&self) -> impl Iterator<Item=&ExportEntry> {
+        self.exports.iter()
     }
     pub fn add_extern(&mut self, ent: ExternEntry) -> CodeRef {
         let pos = ExternRef::new_coderef(self.externs.len());
@@ -116,13 +128,13 @@ impl Program {
     }
     pub fn run(
         &self,
-        mut ctx: Context,
+        ctx: &mut Context,
         export_label: impl StringLike,
         variant: u8,
         rounds: Option<usize>,
     ) -> Result<(), Error> {
         let ent = self.get_export_ent(export_label, variant)?;
-        let mut evalresult = self.eval(&mut ctx, &ent)?;
+        let mut evalresult = self.eval(ctx, &ent)?;
         let (check_rounds, mut rounds) = (rounds.is_some(), rounds.unwrap_or(0));
         loop {
             if check_rounds && rounds == 0 {
@@ -131,7 +143,7 @@ impl Program {
             if check_rounds {
                 print!("{}: ", rounds);
             }
-            evalresult = self.eval(&mut ctx, &evalresult)?;
+            evalresult = self.eval(ctx, &evalresult)?;
             if let CodeRef::Termination = evalresult {
                 break;
             }
@@ -142,7 +154,7 @@ impl Program {
         Ok(())
     }
     pub fn eval(&self, ctx: &mut Context, ent: &CodeRef) -> Result<CodeRef, EvalError> {
-        debug!("eval {:?} {:?}", ent, ctx);
+        debug!("eval {:?} {}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {

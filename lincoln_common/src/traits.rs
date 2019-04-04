@@ -1,5 +1,5 @@
 use core::any::Any;
-use core::fmt::Debug;
+use core::fmt::{Debug, Display};
 
 /// A trait that makes use of string like types (`String` and `&str`)
 /// easier.
@@ -34,22 +34,27 @@ pub trait AccessMut<'a, Source> {
 /// A wrapper trait for wrapped values.
 /// It represents any types that are both `Any` and `Debug`.
 ///
-pub trait AnyDebug: Any + Debug {
+pub trait AnyDebugDisplay: Any + Debug + Display {
     /// Obtain a trait object for `Any`
     fn as_any(&self) -> &dyn Any;
     /// Obtain a trait object for `Debug`
     fn as_debug(&self) -> &dyn Debug;
+    /// Obtain a trait object for `Display`
+    fn as_display(&self) -> &dyn Display;
     /// Turn a concret box into a box of `Any`
     fn into_boxed_any(self: Box<Self>) -> Box<dyn Any>;
 }
-impl<T> AnyDebug for T
+impl<T> AnyDebugDisplay for T
 where
-    T: Any + Debug,
+    T: Any + Debug + Display,
 {
     fn as_any(&self) -> &dyn Any {
         self
     }
     fn as_debug(&self) -> &dyn Debug {
+        self
+    }
+    fn as_display(&self) -> &dyn Display {
         self
     }
     fn into_boxed_any(self: Box<Self>) -> Box<dyn Any> {

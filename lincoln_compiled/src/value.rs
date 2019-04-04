@@ -3,11 +3,11 @@ use crate::permutation::Permutation;
 use crate::program::Program;
 use crate::entries::ExternEntry;
 use crate::{EvalError, ValueAccessError};
-use core::fmt::{Debug, Formatter};
-use lincoln_common::traits::{Access, AnyDebug};
+use core::fmt::{Debug, Display, Formatter};
+use lincoln_common::traits::{Access, AnyDebugDisplay};
 use smallvec::SmallVec;
 
-pub trait Value: AnyDebug {
+pub trait Value: AnyDebugDisplay {
     fn eval(
         self: Box<Self>,
         ctx: &mut Context,
@@ -18,7 +18,20 @@ pub trait Value: AnyDebug {
 struct Closure(SmallVec<[CodeRef; 5]>, Context);
 impl Debug for Closure {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "{{{:?} {:?}}}", self.0, self.1)
+        write!(fmt, "{}", self)
+    }
+}
+impl Display for Closure {
+    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let mut it = self.0.iter();
+        write!(fmt, "[{{")?;
+        if let Some(cr) = it.next() {
+            write!(fmt, "{}", cr)?;
+        }
+        for cr in it {
+            write!(fmt, ";{}", cr)?;
+        }
+        write!(fmt, "}} {}]", self.1)
     }
 }
 impl Value for Closure {
@@ -48,19 +61,15 @@ impl Value for Closure {
 ///
 #[derive(Default)]
 pub struct Context(Vec<Box<dyn Value>>);
-impl std::fmt::Debug for Context {
+impl std::fmt::Display for Context {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        fn debug_fmt(b: &Box<dyn Value>, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-            write!(fmt, "{:?}", b)
-        }
-
         write!(fmt, "(")?;
         let mut it = self.0.iter();
         if let Some(value) = it.next() {
-            debug_fmt(value, fmt)?;
+            write!(fmt, "{:?}", value)?;
         }
         for value in it {
-            debug_fmt(value, fmt)?;
+            write!(fmt, ",{:?}", value)?;
         }
         write!(fmt, ")")
     }
@@ -164,9 +173,17 @@ where
         write!(fmt, "|{:?}|", self.0)
     }
 }
+impl<T> Display for Wrapped<T>
+where
+    T: Display,
+{
+    fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
+        write!(fmt, "|{}|", self.0)
+    }
+}
 impl<T> Value for Wrapped<T>
 where
-    T: AnyDebug,
+    T: AnyDebugDisplay,
 {
     fn eval(
         self: Box<Self>,
@@ -181,24 +198,32 @@ where
 }
 pub fn wrap<T>(t: T) -> Box<dyn Value>
 where
-    T: AnyDebug,
+    T: AnyDebugDisplay,
 {
     Box::new(Wrapped(t))
 }
 pub fn unwrap<T>(v: Box<dyn Value>) -> Result<T, EvalError>
 where
-    T: AnyDebug,
+    T: AnyDebugDisplay,
 {
     Ok(v.into_wrapped()
-        .ok_or(EvalError::from(ValueAccessError::UnwrapNotWrapped))?
+        .ok_or(EvalError::from(ValueAccessError::UnwrapNotWrapped("fail into_wrapped".into())))?
         .into_boxed_any()
         .downcast::<Wrapped<T>>()
-        .map_err(|_| ValueAccessError::UnwrapNotWrapped)?
+        .map_err(|_| ValueAccessError::UnwrapNotWrapped("not Wrapped type".into()))?
         .0)
 }
 
 struct WrappedFn<F>(String, F);
 impl<F> Debug for WrappedFn<F>
+where
+    F: FnOnce(&mut Context, u8) -> Result<CodeRef, EvalError>,
+{
+    fn fmt(&self, fmt: &mut Formatter) -> core::fmt::Result {
+        write!(fmt, "{}", self.0)
+    }
+}
+impl<F> Display for WrappedFn<F>
 where
     F: FnOnce(&mut Context, u8) -> Result<CodeRef, EvalError>,
 {

@@ -61,8 +61,8 @@ pub enum ValueAccessError {
     SplitOutOfRange { at: u8, total: u8 },
     #[fail(display = "Pop from empty context")]
     PopFromEmpty,
-    #[fail(display = "Attempt to unwrap a value that was not wrapped")]
-    UnwrapNotWrapped,
+    #[fail(display = "Attempt to unwrap a value that was not wrapped - {}", _0)]
+    UnwrapNotWrapped(String),
     #[fail(display = "Unwrapping closure with non-empty context")]
     UnwrappingNonEmptyClosure,
     #[fail(display = "Unwrapping closure with multiple variants")]

@@ -91,7 +91,7 @@ impl Display for CommandContext {
                 write!(fmt, "program:\n{}\ncompiled:\n{:?}", program, compiled)?;
                 write!(
                     fmt,
-                    "context:\n{:?}\ncurrent:\n{:?}\nround:{}",
+                    "context:\n{}\ncurrent:\n{}\nround:{}",
                     context, current, round
                 )
             }
@@ -309,10 +309,10 @@ impl CommandContext {
         }
 
         if !step {
-            compiled.run(ctx, entry, variant, None)?;
+            compiled.run(&mut ctx, entry, variant, None)?;
         } else {
             let entry = compiled.get_export_ent(entry, variant)?;
-            println!("{:?} {:?}", entry, ctx);
+            println!("{:?} {}", entry, ctx);
             let program = std::mem::replace(program, Default::default());
             let compiled = std::mem::replace(compiled, Default::default());
             *self = Stepping {
@@ -346,7 +346,7 @@ impl CommandContext {
                 compiled: Some(std::mem::replace(compiled, Default::default())),
             }
         } else {
-            println!("{}: {:?} {:?}", round, next, context);
+            println!("{}: {:?} {}", round, next, context);
             *current = next;
         }
         Ok(true)
