@@ -5,5 +5,6 @@ authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
 description = "Common functions, traits for Lincoln"
 license = "MIT"
+homepage = "https://github.com/earthengine/Lincoln"
 
 [dependencies]

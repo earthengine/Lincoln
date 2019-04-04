@@ -5,6 +5,7 @@ authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
 description = "an interactive shall using web assembly to demostrate Lincoln"
 license = "MIT"
+homepage = "https://github.com/earthengine/Lincoln"
 
 [lib]
 crate-type = ["cdylib"]

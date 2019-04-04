@@ -63,13 +63,7 @@ impl CodeRef {
     pub fn ext(index: usize) -> Self {
         CodeRef::Extern(ExternRef(index))
     }
-    pub(crate) fn get_index(&self) -> usize {
-        match self {
-            CodeRef::Entry(ent) => ent.0,
-            CodeRef::Extern(ExternRef(index)) => *index,
-            _ => std::usize::MAX,
-        }
-    }
+
 }
 
 /// An `EntryRef` refers to an entry of a program.

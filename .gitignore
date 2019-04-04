@@ -7,3 +7,4 @@ lincoln_npm/node_modules
 *.log
 **/pkg
 **/bin
+.vscode/settings.json

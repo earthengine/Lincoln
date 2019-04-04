@@ -5,6 +5,7 @@ authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
 description = "A low level programming language features linear types and direct manipulation of continuation (returning points)."
 license = "MIT"
+repository = "https://github.com/earthengine/Lincoln"
 
 [dependencies]
 log="0.4"
