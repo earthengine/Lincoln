@@ -1,6 +1,6 @@
 [package]
 name = "lincoln_wasm"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Joe Ren <earthengine@gmail.com>"]
 edition = "2018"
 description = "an interactive shall using web assembly to demostrate Lincoln"
@@ -18,3 +18,5 @@ lincoln_compiled = {version="0.1", path="../lincoln_compiled"}
 lincoln_common = {version="0.1", path="../lincoln_common"}
 failure = "0.1"
 js-sys = "0.3"
+log = "0.4"
+console_log = "0.1"

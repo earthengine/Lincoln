@@ -59,6 +59,15 @@ version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
+name = "console_log"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "web-sys 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -160,13 +169,15 @@ dependencies = [
 
 [[package]]
 name = "lincoln_wasm"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
+ "console_log 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "js-sys 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
  "lincoln_common 0.1.0",
  "lincoln_compiled 0.1.0",
  "lincoln_ir 0.1.0",
+ "log 0.4.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "wasm-bindgen 0.2.40 (registry+https://github.com/rust-lang/crates.io-index)",
  "web-sys 0.3.17 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -498,6 +509,7 @@ dependencies = [
 "checksum bumpalo 2.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f6a6bc2ba935b1e2f810787ceba8dfe86cbc164cee55925cae715541186673c4"
 "checksum cc 1.0.32 (registry+https://github.com/rust-lang/crates.io-index)" = "ad0daef304fa0b4238f5f7ed7178774b43b06f6a9b6509f6642bef4ff1f7b9b2"
 "checksum cfg-if 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "11d43355396e872eefb45ce6342e4374ed7bc2b3a502d1b28e36d6e23c05d1f4"
+"checksum console_log 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)" = "1e7871d2947441b0fdd8e2bd1ce2a2f75304f896582c0d572162d48290683c48"
 "checksum env_logger 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)" = "b61fa891024a945da30a9581546e8cfaf5602c7b3f4c137a2805cf388f92075a"
 "checksum failure 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "795bd83d3abeb9220f257e597aa0080a508b27533824adf336529648f6abf7e2"
 "checksum failure_derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)" = "ea1063915fd7ef4309e222a5a07cf9c319fb9c7836b1f89b85458672dbb127e1"
