@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="32"
+    height="32"
+    viewBox="0 0 100 100">
+    <defs>
+        <filter id="light">
+        <!--Blur effect-->
+        <feGaussianBlur stdDeviation="4" result="blur2" />
+        <!--Lighting effect-->
+        <feSpecularLighting result="spec2" in="blur2" 
+            specularConstant="3" 
+            specularExponent="20" 
+            lighting-color="gray">
+            <!--Light source effect-->
+            <feDistantLight azimuth="25" elevation="30" />
+        </feSpecularLighting>
+        <!--Composition of inputs-->
+        <feComposite in="SourceGraphic" in2="spec2" 
+            operator="arithmetic" k1="0" k2="1" k3="1" k4="0" />
+        </filter>
+    </defs>
+    <g filter="url(#light)">
+        <ellipse cx="50" cy="85" rx="40" ry="10" />
+        <path d="M25 85 L15 10 h 70 L75 85 z"/>
+        <ellipse cx="50" cy="10" rx="35" ry="5" />
+    </g>
+</svg>
