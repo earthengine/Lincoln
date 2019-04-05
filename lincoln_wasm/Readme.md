@@ -31,7 +31,7 @@ Open http://127.0.0.1:8080 ,
 
 Copy and paste the [factorial](https://github.com/earthengine/Lincoln/blob/master/fact.json) program to the text area. Enter a number like `10` in the input box, hit "run". You will get the result and how many steps the intepretor need to run the program.
 
-![image](https://user-images.githubusercontent.com/2227031/55533886-7704dc80-56fe-11e9-9111-bc541af03f3b.png)
+![image](https://user-images.githubusercontent.com/2227031/55554137-c7476300-572d-11e9-9814-6d8ec617e0bb.png)
 
 If you open the Javascript console, you can see the above piece, which is a representation of the compiled program.
 
