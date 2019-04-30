@@ -230,7 +230,9 @@ impl CommandContext {
             "fact" => FACT_EXTERNS,
             "bint" => BINT_EXTERNS,
             _ => bail!("extern set not found: {}", externs),
-        }.iter().map(|f| f());
+        }
+        .iter()
+        .map(|f| f());
         use CommandContext::*;
         match self {
             Idle {
@@ -285,9 +287,7 @@ impl CommandContext {
         let values = Self::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
         let mut ctx: Context = Default::default();
-        ctx.push(lincoln_compiled::native_closure("print", |c, _| {
-            print(c)
-        }));
+        ctx.push(lincoln_compiled::native_closure("print", |c, _| print(c)));
         for value in values {
             ctx.push(value);
         }

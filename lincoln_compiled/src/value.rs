@@ -41,11 +41,28 @@ impl Value for Closure {
         variant: u8,
     ) -> Result<CodeRef, EvalError> {
         ctx.append(&mut self.1);
-        if variant as usize >= self.0.len() {
+        //A closure without variants is "Termination"
+        if self.0.len()==0 {
+            return Ok(CodeRef::Termination);
+        }
+        let variant_cnt = self.0.len();
+        //Variant 1 is "drop" for single variant closures. Requires no captured variables
+        //Variant 2 is "copy" for single variant closures. Requires no captured variables
+        if variant as usize >= variant_cnt && (variant_cnt!=1 || (variant!=1 && variant!=2)) { 
             Err(EvalError::VariantOutOfBound {
                 given: variant,
-                max: self.0.len() as u8,
+                max: variant_cnt as u8,
             })
+        } else if variant==1 && variant_cnt==1 {
+            ctx.expect_args(1)?;
+            let cont = ctx.pop()?;
+            cont.eval(ctx, 0)
+        } else if variant==2 && variant_cnt==1 {
+            ctx.expect_args(1)?;
+            let cont = ctx.pop()?;
+            ctx.push(Box::new(Closure(self.0.clone(),Context::default())));
+            ctx.push(Box::new(Closure(self.0,Context::default())));
+            cont.eval(ctx, 0)
         } else {
             Ok(self.0[variant as usize].clone())
         }

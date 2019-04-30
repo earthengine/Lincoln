@@ -33,9 +33,7 @@ eval_fn!(_try_minus(c), 3, cont, [n1,n2]:[usize,usize], {
     }
 });
 
-eval_fn!(_drop_int(c), 2, cont, [_v1]: [usize], {
-    cont.eval(c, 0)
-});
+eval_fn!(_drop_int(c), 2, cont, [_v1]: [usize], { cont.eval(c, 0) });
 eval_fn!(_copy_int(c), 2, cont, [v]: [usize], {
     c.push(lincoln_compiled::wrap(v));
     c.push(lincoln_compiled::wrap(v));
