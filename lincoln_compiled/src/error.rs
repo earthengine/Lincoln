@@ -2,14 +2,16 @@ use crate::coderef::{EntryRef, ExternRef, GroupRef};
 
 use failure::Error;
 
+/// Errors may occur during building
 #[derive(Fail, Debug)]
-pub enum BuildError {
+pub enum BuildError {    
     #[fail(display = "Group {:?} not found", _0)]
     GroupNotFound(GroupRef),
     #[fail(display = "Given variant {} exceed limit {}", given, max)]
     VariangOutOfRange { max: u8, given: u8 },
 }
 
+/// Errors may occur during evaluation
 #[derive(Fail, Debug)]
 pub enum EvalError {
     #[fail(display = "Attempt to eval on termination value")]
@@ -43,6 +45,7 @@ impl From<ValueAccessError> for EvalError {
     }
 }
 
+/// Errors may occur when referencing code
 #[derive(Fail, Debug)]
 pub enum CodeRefError {
     #[fail(display = "Group not found {:?}", index)]
@@ -55,6 +58,7 @@ pub enum CodeRefError {
     CodeRefNotExtern,
 }
 
+/// Errors may occurs when working with values
 #[derive(Fail, Debug)]
 pub enum ValueAccessError {
     #[fail(display = "Splitting context at {}, total {}", at, total)]

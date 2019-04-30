@@ -8,40 +8,52 @@ use std::hash::{Hash, Hasher};
 
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
+/// Represents an external function that can be evaluated
+/// It can be a function pointer or a
+/// boxed closure.
 pub enum EvalFn {
-    Stateless(for<'a,'b> fn(&'b mut Context) -> Result<CodeRef, EvalError>),
+    Stateless(fn(&mut Context) -> Result<CodeRef, EvalError>),
     Dyn(Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>),
 }
 impl EvalFn {
-    pub fn eval<'a,'b>(&self, ctx: &'b mut Context) -> Result<CodeRef, EvalError> {
+    /// Call the internal function to evaluate the result
+    pub fn eval(&self, ctx: &mut Context) -> Result<CodeRef, EvalError> {
         match self {
             EvalFn::Stateless(f) => f(ctx),
             EvalFn::Dyn(bf) => bf(ctx),
         }
     }
-    pub fn stateless(f: for<'a, 'b> fn(&'b mut Context) -> Result<CodeRef, EvalError>) -> Self {
+    /// Create from a stateless closure or function
+    pub fn stateless(f: fn(&mut Context) -> Result<CodeRef, EvalError>) -> Self {
         EvalFn::Stateless(f)
     }
+    /// Create from a stateful closure (will be boxed)
     pub fn stateful(
         bf: Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>,
     ) -> Self {
         EvalFn::Dyn(bf)
     }
 }
+/// Represents an external function that can produce values.
+/// It can be a function pointer or a
+/// boxed closure.
 pub enum ValueFn {
     Stateless(fn() -> Box<dyn Value>),
     Dyn(Box<dyn Fn() -> Box<dyn Value>>),
 }
 impl ValueFn {
+    /// Call the internal function to produce a value
     pub fn get_value(&self) -> Box<dyn Value> {
         match self {
             ValueFn::Stateless(f) => f(),
             ValueFn::Dyn(bf) => bf(),
         }
     }
+    /// Create from a stateless closure or function
     pub fn stateless(f: fn() -> Box<dyn Value>) -> Self {
         ValueFn::Stateless(f)
     }
+    /// Create from a stateful closure (will be boxed)
     pub fn dynamic(f: impl 'static + Fn() -> Box<dyn Value>) -> Self {
         ValueFn::Dyn(Box::new(f))
     }

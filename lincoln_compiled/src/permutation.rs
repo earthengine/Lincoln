@@ -2,7 +2,9 @@ use core::fmt::{Display, Error, Formatter};
 use core::str::FromStr;
 use smallvec::SmallVec;
 
+/// A trait to treat some suitable type to a permutation, without consuming
 pub trait AsPermutation {
+    //Return a permutation from a shared reference
     fn as_permutation(&self) -> Result<Permutation, failure::Error>;
 }
 
@@ -29,12 +31,24 @@ pub const FACTS: [u64; 20] = [
     243290200817664000,
 ];
 
+/// Represents a permutation of up to 20 positions.
+/// The representation is the following:
+/// 
+/// 1. Decide whether the value at position 1 should be in position 0.
+/// 2. If yes, a swap (0<->1) is needed.
+/// 3. Decide whether the value at position 2 should be in position 0 or 1.
+/// 4. If yes, perform (0<->2) or (1<->2) accordingly
+/// 5. Repeat until we reach the end of the permutation.
+/// 6. We now have a list of permutation to perform. 
+/// 7. We then encode (m<->n) as (m+1)*n!, and add them together to get the result.
+/// 
+/// It is provable that the number we get for the above are unique for permutations.
 #[derive(Copy, Clone, PartialEq, Debug, Serialize, Deserialize)]
 pub struct Permutation(pub u64);
 impl Display for Permutation {
     fn fmt(&self, fmt: &mut Formatter) -> Result<(), Error> {
         let mut v = *b"abcdefghijklmnopqrst";
-        let r = &mut v[0..self.len() as usize];
+        let r = &mut v[0..self.min_len() as usize];
         self.permutate(r);
         write!(
             fmt,
@@ -67,6 +81,10 @@ impl AsPermutation for &Permutation {
     }
 }
 impl Permutation {
+    /// Perform the permutation on a given set of values.
+    /// 
+    /// values: the values to permutate
+    /// 
     pub fn permutate<T>(&self, values: &mut [T]) {
         let mut v = self.0;
         for i in 1..values.len() {
@@ -80,6 +98,12 @@ impl Permutation {
     fn identical() -> Permutation {
         Permutation(0)
     }
+    /// Returns a permucation that swap position i and j.
+    /// 
+    /// We limit the maximum number positions to 255,
+    /// because our underline `u64` type only supports 
+    /// 20 positions and anything greater than that does not
+    /// make sende.
     pub fn swap(i: u8, j: u8) -> Permutation {
         if j == 0 {
             return Self::identical();
@@ -87,7 +111,10 @@ impl Permutation {
         let (i, j) = (i as u64, j as u64);
         Permutation(FACTS[(i + j - 1) as usize] * (i + 1))
     }
-    pub fn len(&self) -> u8 {
+    /// Returns the minimal number of positions to perform the permutation
+    /// 
+    /// returns: the required number of positions
+    pub fn min_len(&self) -> u8 {
         match FACTS.binary_search_by(|v| v.cmp(&self.0)) {
             Ok(n) => (n + 2) as u8,
             Err(0) => 0,

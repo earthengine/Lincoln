@@ -25,23 +25,29 @@ impl<T> StringLike for T where T: Into<String> + AsRef<str> {
     }    
 }
 
-/// A trait for field access
+/// A trait for shared field access
 ///
 pub trait Access<'a, Source> {
+    /// The result type
     type Target: 'a;
+    /// Given the source type, access its field
     fn access<'b>(&self, src: &'b Source) -> Self::Target
     where
         'b: 'a;
 }
+/// A trait for mutable field access
+/// 
 pub trait AccessMut<'a, Source> {
+    /// The result type
     type Target: 'a;
+    /// Given the source type, access its field
     fn access_mut<'b>(&self, src: &'b mut Source) -> Self::Target
     where
         'b: 'a;
 }
 
 /// A wrapper trait for wrapped values.
-/// It represents any types that are both `Any` and `Debug`.
+/// It represents any types that are both `Any`, `Debug` and `Display`.
 ///
 pub trait AnyDebugDisplay: Any + Debug + Display {
     /// Obtain a trait object for `Any`

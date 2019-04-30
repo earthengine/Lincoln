@@ -5,6 +5,8 @@ use crate::{BuildError, EvalError, Permutation};
 use failure::Error;
 use lincoln_common::traits::{Access, StringLike};
 
+/// A compiled lincoln program
+/// 
 #[derive(Serialize, Default)]
 pub struct Program {
     pub(crate) entries: Vec<Entry>,
@@ -43,6 +45,7 @@ impl std::fmt::Debug for Program {
     }
 }
 impl Program {
+    /// Create a new empty program
     pub fn new() -> Self {
         Program {
             entries: vec![],
@@ -51,18 +54,23 @@ impl Program {
             groups: vec![],
         }
     }
+    /// Iterate all entries
     pub fn iterate_entries(&self) -> impl Iterator<Item=&Entry> {
         self.entries.iter()
     }
+    /// Iterate all external entries
     pub fn iterate_externs(&self) -> impl Iterator<Item=&ExternEntry> {
         self.externs.iter()
     }
+    /// Iterate all groups
     pub fn iterate_groups(&self) -> impl Iterator<Item=&CodeGroup> {
         self.groups.iter()
     }
+    /// Iterate all exports
     pub fn iterate_exports(&self) -> impl Iterator<Item=&ExportEntry> {
         self.exports.iter()
     }
+    /// Add a new external entry
     pub fn add_extern(&mut self, ent: ExternEntry) -> CodeRef {
         let pos = ExternRef::new_coderef(self.externs.len());
         self.externs.push(ent);
@@ -73,12 +81,30 @@ impl Program {
         self.entries.push(ent);
         pos
     }
+    /// Add a return instruction
+    /// 
+    /// variant: the variant to call on return
+    /// 
     pub fn add_return(&mut self, variant: u8) -> CodeRef {
         self.add_entry(Entry::Return { variant })
     }
+    /// Add a jump instruction
+    /// The instruction of the jump target will receive the same 
+    /// number of arguments as the jumping instruction.
+    /// 
+    /// cont: the next instruction to jump to
+    /// per: the permutation to be performed before the jump
+    /// 
     pub fn add_jump(&mut self, cont: CodeRef, per: Permutation) -> CodeRef {
         self.add_entry(Entry::Jump { cont, per })
     }
+    /// Add a call instruction
+    /// Note: the instruction/entry to call must accept exactly `num_args + 1` variables
+    /// 
+    /// call: the instruction to call
+    /// num_args: the number of values in the context to keep
+    /// cont: the instruction group to receive the result
+    /// 
     pub fn add_call(&mut self, call: CodeRef, num_args: u8, cont: GroupRef) -> CodeRef {
         self.add_entry(Entry::Call {
             call,
@@ -86,20 +112,37 @@ impl Program {
             num_args,
         })
     }
+    /// Set a entry group to be exported as a name
+    /// 
+    /// name: the name of the exported entry
+    /// g: the entry group to be exported
+    /// 
     pub fn add_export(&mut self, name: impl StringLike, g: GroupRef) {
         self.exports.push(ExportEntry {
             name: name.to_string(),
             g,
         })
     }
+    /// Create a new empty group and return its reference.
+    /// 
     pub fn add_empty_group(&mut self) -> GroupRef {
         let pos = GroupRef::new(self.groups.len());
         self.groups.push(smallvec![]);
         pos
     }
+    /// Add a new entry to an existing group
+    /// 
+    /// grp: refers to the existing group
+    /// ent: the new entry
+    /// 
     pub fn add_group_entry(&mut self, grp: GroupRef, ent: CodeRef) -> Result<(), BuildError> {
         grp.push_to(ent, self)
     }
+    /// Find an export by name, and receive an entry from its variants
+    /// 
+    /// export_label: the name of the export
+    /// variant: the variant to return
+    /// 
     pub fn get_export_ent(
         &self,
         export_label: impl StringLike,
@@ -115,6 +158,10 @@ impl Program {
             bail!("Export label not found or invalid");
         }
     }
+    /// Find an export but only returns an entry group
+    /// 
+    /// export_label: the name of the export
+    /// 
     pub fn get_export(&self, export_label: impl StringLike) -> Result<GroupRef, Error> {
         if let Some(ent) = self
             .exports
@@ -126,6 +173,13 @@ impl Program {
             bail!("Export label not found or invalid");
         }
     }
+    /// Run the program
+    /// 
+    /// ctx: the values given to run
+    /// export_label: the name of the exported entry to be run into
+    /// variant: the variant of the exported entry to run
+    /// rounds: None if run to the end is required, otherwise the maximum steps to tun
+    /// 
     pub fn run(
         &self,
         ctx: &mut Context,
@@ -153,6 +207,12 @@ impl Program {
         }
         Ok(())
     }
+    /// Evaluate the program for one step only
+    /// 
+    /// ctx: the values given to evaluate
+    /// ent: the current code entry
+    /// 
+    /// returns: the next code entry, or an error
     pub fn eval(&self, ctx: &mut Context, ent: &CodeRef) -> Result<CodeRef, EvalError> {
         debug!("eval {:?} {}", ent, ctx);
         match ent {
