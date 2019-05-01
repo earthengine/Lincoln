@@ -4,17 +4,26 @@ use core::fmt::{Debug, Display};
 /// A trait that makes use of string like types (`String` and `&str`)
 /// easier.
 ///
-pub trait StringLike: Into<String> + AsRef<str> {
+pub trait StringLike {
     /// Calling `into` will consume the object,
     /// calling `as_ref` only gives borrowed string.
     /// This combines them together to give a owned string
     /// without consuming the value.
     ///
+    fn to_string(self) -> String;
+    fn as_str(&self) -> &str;
     fn clone_string(&self) -> String {
-        self.as_ref().to_string()
+        self.as_str().into()
     }
 }
-impl<T> StringLike for T where T: Into<String> + AsRef<str> {}
+impl<T> StringLike for T where T: Into<String> + AsRef<str> {
+    fn to_string(self) -> String {
+        self.into()
+    }
+    fn as_str(&self) -> &str {
+        self.as_ref()
+    }    
+}
 
 /// A trait for field access
 ///

@@ -86,9 +86,9 @@ impl Program {
             num_args,
         })
     }
-    pub fn add_export(&mut self, name: impl Into<String>, g: GroupRef) {
+    pub fn add_export(&mut self, name: impl StringLike, g: GroupRef) {
         self.exports.push(ExportEntry {
-            name: name.into(),
+            name: name.to_string(),
             g,
         })
     }
@@ -108,7 +108,7 @@ impl Program {
         if let Some(ent) = self
             .exports
             .iter()
-            .find(|e| e.name == export_label.as_ref())
+            .find(|e| e.name == export_label.as_str())
         {
             ent.g.get_entry(self, variant).map_err(Error::from)
         } else {
@@ -119,7 +119,7 @@ impl Program {
         if let Some(ent) = self
             .exports
             .iter()
-            .find(|e| e.name == export_label.as_ref())
+            .find(|e| e.name == export_label.as_str())
         {
             Ok(ent.g)
         } else {

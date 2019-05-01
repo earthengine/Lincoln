@@ -130,18 +130,18 @@ impl PreCompileProgram {
     /// Set an entry to be exported
     ///
     pub fn set_export(&mut self, label: impl StringLike) -> Result<(), Error> {
-        if self.defined_ent.contains_key(label.as_ref()) {
-            let _ = self.exports.insert(label.into());
+        if self.defined_ent.contains_key(label.as_str()) {
+            let _ = self.exports.insert(label.to_string());
             Ok(())
         } else {
             bail!("label not found");
         }
     }
     pub fn delete_ent(&mut self, label: impl StringLike) -> Result<(), Error> {
-        let labelent = self.defined_ent.get(label.as_ref());
+        let labelent = self.defined_ent.get(label.as_str());
         if let Some(ent) = labelent {
             let ent = *ent;
-            *ent.access_mut(self)? = Entry::Extern { name: label.into() };
+            *ent.access_mut(self)? = Entry::Extern { name: label.to_string() };
         }
         Ok(())
     }
@@ -198,7 +198,7 @@ impl PreCompileProgram {
     ///
     pub fn define_ret(&mut self, label: impl StringLike, variant: u8) -> Result<EntryRef, Error> {
         let ent = Entry::Ret { variant };
-        self.define_ent_internal(label.into(), ent)
+        self.define_ent_internal(label, ent)
     }
     /// Define a group of instructions
     ///
@@ -349,7 +349,7 @@ impl PreCompileProgram {
     ) -> Result<EntryRef, Error> {
         let idx = self.entries.len();
         let ret = EntryRef::new(idx);
-        let labelent = self.defined_ent.get(label.as_ref());
+        let labelent = self.defined_ent.get(label.as_str());
         if let Some(ext) = labelent {
             let ent_orig = format!("{}", ext.access(self)?);
             info!("Redefine {} => {}", ent_orig, ent);
@@ -357,18 +357,18 @@ impl PreCompileProgram {
             *ext.access_mut(self)? = ent;
         } else {
             self.entries.push(ent);
-            let _ = self.defined_ent.insert(label.into(), ret);
+            let _ = self.defined_ent.insert(label.to_string(), ret);
         }
         Ok(ret)
     }
     fn define_extern_or_entry(&mut self, name: impl StringLike) -> Result<EntryRef, Error> {
-        if let Some(ent) = self.defined_ent.get(name.as_ref()) {
+        if let Some(ent) = self.defined_ent.get(name.as_str()) {
             return Ok(*ent);
         }
         let ent = Entry::Extern {
             name: name.clone_string(),
         };
-        let r = self.define_ent_internal(name.into(), ent)?;
+        let r = self.define_ent_internal(name, ent)?;
         Ok(r)
     }
     fn define_jmp_internal(
@@ -378,7 +378,7 @@ impl PreCompileProgram {
         per: Permutation,
     ) -> Result<EntryRef, Error> {
         let ent = Entry::Jmp { cont, per: per };
-        self.define_ent_internal(name.into(), ent)
+        self.define_ent_internal(name, ent)
     }
     fn define_call_internal(
         &mut self,
@@ -392,7 +392,7 @@ impl PreCompileProgram {
             callcnt,
             callcont,
         };
-        self.define_ent_internal(name.into(), ent)
+        self.define_ent_internal(name, ent)
     }
     fn define_group_internal(
         &mut self,
@@ -400,7 +400,7 @@ impl PreCompileProgram {
         elements: Vec<EntryRef>,
     ) -> Result<EntryRef, Error> {
         let ent = Entry::Group { elements };
-        self.define_ent_internal(name.into(), ent)
+        self.define_ent_internal(name, ent)
     }
 
     fn find_refs(&self, seed: &BTreeSet<EntryRef>) -> BTreeSet<EntryRef> {

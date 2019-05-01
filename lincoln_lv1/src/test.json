@@ -1,0 +1,22 @@
+{
+    "args": [],
+    "assignments": [{
+        "var": "c",
+        "body": {
+            "Simple": {
+                "block": {
+                    "args": [],
+                    "assignments": [],
+                    "call": {
+                        "callee": "c",
+                        "args": ["o"]
+                    }
+                }
+            }
+        }
+    }],
+    "call": {
+        "callee": "f",
+        "args": ["c"]
+    }
+}
