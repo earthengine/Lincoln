@@ -2,23 +2,47 @@
 <head>
     <title>Hello World</title>
     <meta charset="utf-8"/>
+
+    <!--Load the Lincoln icon-->
     <link rel="icon" href="lincoln.svg">
+
+    <!--Load Bootstrap CSS-->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+          integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+
+    <!--Custom CSS-->
     <style type="text/css">
+        .jumbotron {
+            margin: 10px;
+        }
+        form {
+            margin: 10px;
+        }
+        label {
+            margin-right:10px;
+        }
         #program {
-            width: 80em;
-            height: 50em;
+            height: 50em;        
         }
     </style>
 </head>
 <body>
-    <div id="container">
-        <textarea id="program"></textarea>
-        <label for="input">Input: </label><input type="number" value="10" id="input">
-        <button id="run">Run</button>        
-        <p style="display: none;" id="result"></p>
+    <div id="container" class="container">
+        <div class="jumbotron">
+            <H1>Lincoln Playground</H1>
+            <a href="https://github.com/earthengine/Lincoln" rel="author">by Earth Engine</a>
+            <textarea id="program" class="form-control"></textarea>
+            <form class="form-inline" role="form">
+                <label for="input">Input: </label><input type="number" class="form-control" value="10" id="input">
+            </form>
+            <button id="run" class="form-control">Run</button>
+            <p style="display: none;" id="result"></p>
+        </div>
     </div>
     <script type="module">
         import { LincolnIntepretor, default as init } from './lincoln_wasm.js';
+
+        /**************** Extern Functions *************************/
         function add(i, j) {
             return i+j;
         }
@@ -39,11 +63,8 @@
             return [];            
         }
 
-        async function run() {
-            await init('./lincoln_wasm_bg.wasm');
-            const intepretor = LincolnIntepretor.new();
-            document.getElementById("run").addEventListener("click", () => {
-                const program = document.getElementById("program").value;
+        function onclick(intepretor) {
+            const program = document.getElementById("program").value;
                 intepretor.set_program(JSON.parse(program));
                 intepretor.compile([copy_int,drop_int,try_minus,mul,{name: "one", value: 1}]);
                 const input = parseInt(document.getElementById("input").value);
@@ -56,9 +77,14 @@
                 const result = document.getElementById("result");
                 result.style.display="block";
                 result.textContent = `result: ${intepretor.get_context()}\nsteps: ${steps}`;
-            });
+        }
+        
+        async function run() {
+            await init('./lincoln_wasm_bg.wasm');
+            const intepretor = LincolnIntepretor.new();
+            document.getElementById("run")
+                    .addEventListener("click", () => onclick(intepretor));
         }
         run();
     </script>
 </body>
-
