@@ -2,7 +2,7 @@ use lincoln_compiled::{Context, Value, CodeRef, EvalError, ValueAccessError, wra
 
 use std::fmt::{Formatter, Display, Debug};
 
-use js_sys::{Array, Function, Reflect};
+use js_sys::{Array, Function, JsString};
 use wasm_bindgen::prelude::*;
 
 pub trait JsResult<T> {
@@ -36,8 +36,8 @@ impl Debug for LincolnJsValue {
 
 impl Display for LincolnJsValue {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        let r:Reflect = self.0.clone().into();
-        let s:String = r.to_string().into();
+        let s:JsString = self.0.clone().into();
+        let s:String = s.into();
         write!(fmt, "[{}]", s)
     }
 }

@@ -7,9 +7,8 @@ use lincoln_common::traits::Access;
 
 use crate::lincoln_jsvalue::{eval_function, wrap_jsvalue, unwrap_jsvalue, JsResult, CollapseResult};
 
-fn jsvalue_to_string(v: &JsValue) -> String {
-    let r: Reflect = v.clone().into();
-    let s: JsString = r.to_string();
+fn jsvalue_to_string(v: JsValue) -> String {
+    let s: JsString = v.into();
     s.into()
 }
 
@@ -127,7 +126,7 @@ impl LincolnIntepretor {
         }));
         for (i,value) in value_iter.enumerate() {
             let value = value.collapse();
-            debug!("value {} = {}", i, jsvalue_to_string(&value));
+            debug!("value {} = {}", i, jsvalue_to_string(value.clone()));
             ctx.push(wrap_jsvalue(&value));
         }
         if !step {

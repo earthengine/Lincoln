@@ -8,3 +8,4 @@ lincoln_npm/node_modules
 **/pkg
 **/bin
 .vscode/settings.json
+lincoln_lv1/Cargo.lock
