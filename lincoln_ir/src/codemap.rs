@@ -41,8 +41,8 @@ impl CodeMap {
         let cont = self
             .coderef_map
             .get(&cont)
-            .ok_or(CodeMapError::EntryNotFound(cont))?;
-        self.coderef_map.insert(ent, self.prog.add_jump(*cont, per));
+            .ok_or(CodeMapError::EntryNotFound(cont))?.clone();
+        self.coderef_map.insert(ent, self.prog.add_jump(cont, per));
         Ok(())
     }
     pub(crate) fn add_call(
@@ -55,7 +55,7 @@ impl CodeMap {
         let call = self
             .coderef_map
             .get(&callee)
-            .ok_or(CodeMapError::EntryNotFound(callee))?;
+            .ok_or(CodeMapError::EntryNotFound(callee))?.clone();
         let cont = self.group_map.get(&callcont);
         // The continuation part of a `call` instruction is a group.
         // If the group has been defined, add a new entry to it.
@@ -63,7 +63,7 @@ impl CodeMap {
         match cont {
             Some(cont) => {
                 self.coderef_map
-                    .insert(ent, self.prog.add_call(call.clone(), callcnt, *cont));
+                    .insert(ent, self.prog.add_call(call, callcnt, *cont));
             }
             None => {
                 let grp = self.prog.add_empty_group();
@@ -74,7 +74,7 @@ impl CodeMap {
                         .map_err(CodeMapError::Build)?;
                 }
                 self.coderef_map
-                    .insert(ent, self.prog.add_call(call.clone(), callcnt, grp));
+                    .insert(ent, self.prog.add_call(call, callcnt, grp));
             }
         }
         Ok(())
