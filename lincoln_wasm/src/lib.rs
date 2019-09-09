@@ -1,14 +1,14 @@
 #[macro_use]
 extern crate log;
 extern crate console_log;
-extern crate web_sys;
 extern crate js_sys;
+extern crate web_sys;
 
 mod lincoln_int;
 mod lincoln_jsvalue;
 
-use wasm_bindgen::prelude::*;
 use lincoln_jsvalue::JsResult;
+use wasm_bindgen::prelude::*;
 
 // Called when the wasm module is instantiated
 #[wasm_bindgen(start)]

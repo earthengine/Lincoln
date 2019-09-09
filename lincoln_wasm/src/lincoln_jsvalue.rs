@@ -1,25 +1,25 @@
-use lincoln_compiled::{Context, Value, CodeRef, EvalError, ValueAccessError, wrap};
+use lincoln_compiled::{wrap, CodeRef, Context, EvalError, Value, ValueAccessError};
 
-use std::fmt::{Formatter, Display, Debug};
+use std::fmt::{Debug, Display, Formatter};
 
 use js_sys::{Array, Function, JsString};
 use wasm_bindgen::prelude::*;
 
 pub trait JsResult<T> {
-    fn map_err_js(self) -> Result<T,JsValue>;
+    fn map_err_js(self) -> Result<T, JsValue>;
 }
-impl<T,E> JsResult<T> for Result<T,E>
-where E: Display
+impl<T, E> JsResult<T> for Result<T, E>
+where
+    E: Display,
 {
-    fn map_err_js(self) -> Result<T,JsValue> {
+    fn map_err_js(self) -> Result<T, JsValue> {
         self.map_err(|e| format!("{}", e).into())
     }
 }
 pub trait CollapseResult<T> {
     fn collapse(self) -> T;
 }
-impl<T> CollapseResult<T> for Result<T,T>
-{
+impl<T> CollapseResult<T> for Result<T, T> {
     fn collapse(self) -> T {
         self.unwrap_or_else(|e| e)
     }
@@ -29,15 +29,15 @@ impl<T> CollapseResult<T> for Result<T,T>
 #[derive(Clone)]
 pub struct LincolnJsValue(JsValue);
 impl Debug for LincolnJsValue {
-    fn fmt(&self, fmt:&mut Formatter) -> std::fmt::Result {
+    fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         write!(fmt, "{}", self)
     }
 }
 
 impl Display for LincolnJsValue {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
-        let s:JsString = self.0.clone().into();
-        let s:String = s.into();
+        let s: JsString = self.0.clone().into();
+        let s: String = s.into();
         write!(fmt, "[{}]", s)
     }
 }
@@ -50,11 +50,12 @@ impl Value for LincolnJsValue {
         Some(wrap(self))
     }
 }
-pub fn wrap_jsvalue(value:&JsValue) -> Box<dyn Value> {
+pub fn wrap_jsvalue(value: &JsValue) -> Box<dyn Value> {
     Box::new(LincolnJsValue(value.clone()))
 }
-pub fn unwrap_jsvalue(value: Box<Value>) -> Result<JsValue, EvalError> {
-    Ok(value.into_boxed_any()
+pub fn unwrap_jsvalue(value: Box<dyn Value>) -> Result<JsValue, EvalError> {
+    Ok(value
+        .into_boxed_any()
         .downcast::<LincolnJsValue>()
         .map_err(|e| ValueAccessError::UnwrapNotWrapped(format!("{:?}", e)))?
         .0)
@@ -72,24 +73,24 @@ pub fn eval_function(f: &Function, ctx: &mut Context) -> Result<CodeRef, EvalErr
             if let Ok(Some(value_iter)) = value_iter {
                 for value in value_iter {
                     let value = value.collapse();
-                    ctx.push(wrap_jsvalue(&value));            
+                    ctx.push(wrap_jsvalue(&value));
                 }
             } else {
                 ctx.push(wrap_jsvalue(&v));
             }
             r.eval(ctx, 0)
-        },
+        }
         Err(e) => {
             let value_iter = js_sys::try_iter(&e);
             if let Ok(Some(value_iter)) = value_iter {
                 for value in value_iter {
                     let value = value.collapse();
-                    ctx.push(wrap_jsvalue(&value));            
+                    ctx.push(wrap_jsvalue(&value));
                 }
             } else {
                 ctx.push(wrap_jsvalue(&e));
             }
             r.eval(ctx, 1)
         }
-    }        
+    }
 }
