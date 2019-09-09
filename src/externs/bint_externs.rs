@@ -58,7 +58,7 @@ eval_fn_untyped!(_count(c), 2, [cont, v], {
             0 => _onzero(c),
             1 => _onodd(c),
             2 => _oneven(c),
-            n => return Err(EvalError::VariantOutOfBound { given: n, max: 2 }),
+            n => Err(EvalError::VariantOutOfBound { given: n, max: 2 }),
         }
     }));
     v.eval(c, 0)

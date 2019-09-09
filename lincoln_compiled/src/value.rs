@@ -42,7 +42,7 @@ impl Value for Closure {
     ) -> Result<CodeRef, EvalError> {
         ctx.append(&mut self.1);
         //A closure without variants is "Termination"
-        if self.0.len()==0 {
+        if self.0.is_empty() {
             return Ok(CodeRef::Termination);
         }
         let variant_cnt = self.0.len();
@@ -64,7 +64,7 @@ impl Value for Closure {
             ctx.push(Box::new(Closure(self.0,Context::default())));
             cont.eval(ctx, 0)
         } else {
-            Ok(self.0[variant as usize].clone())
+            Ok(self.0[variant as usize])
         }
     }
     fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>> {
@@ -92,6 +92,10 @@ impl std::fmt::Display for Context {
     }
 }
 impl Context {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
     /// A handy function for external functions. It checks that
     /// there is exactly the amount of values being stored in the context.
     ///
@@ -99,10 +103,10 @@ impl Context {
     ///
     pub fn expect_args(&self, args: u8) -> Result<(), EvalError> {
         if self.len() != args {
-            return Err(EvalError::UnexpectedArgs {
+            Err(EvalError::UnexpectedArgs {
                 expect: args,
                 actual: self.len(),
-            });
+            })
         } else {
             Ok(())
         }
@@ -223,8 +227,9 @@ pub fn unwrap<T>(v: Box<dyn Value>) -> Result<T, EvalError>
 where
     T: AnyDebugDisplay,
 {
+    let fail = EvalError::from(ValueAccessError::UnwrapNotWrapped("fail into_wrapped".into()));
     Ok(v.into_wrapped()
-        .ok_or(EvalError::from(ValueAccessError::UnwrapNotWrapped("fail into_wrapped".into())))?
+        .ok_or(fail)?
         .into_boxed_any()
         .downcast::<Wrapped<T>>()
         .map_err(|_| ValueAccessError::UnwrapNotWrapped("not Wrapped type".into()))?

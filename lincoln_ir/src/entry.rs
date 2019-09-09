@@ -84,7 +84,7 @@ pub struct EntryRef {
     index: usize,
 }
 impl EntryRef {
-    pub fn is_group_in(&self, pm: &PreCompileProgram) -> bool {
+    pub fn is_group_in(self, pm: &PreCompileProgram) -> bool {
         if let Ok(v) = self.access(pm) {
             v.is_group()
         } else {

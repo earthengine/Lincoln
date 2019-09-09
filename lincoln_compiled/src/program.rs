@@ -219,7 +219,7 @@ impl Program {
             CodeRef::Entry(ent) => match ent.access(self) {
                 Some(Entry::Jump { cont, per }) => {
                     ctx.permutate(*per);
-                    Ok(cont.clone())
+                    Ok(*cont)
                 }
                 Some(Entry::Call {
                     call,
@@ -229,7 +229,7 @@ impl Program {
                     let c2 = ctx.split(*num_args)?;
                     let v = closure_prog(*cont, c2, self)?;
                     ctx.push(v);
-                    Ok(call.clone())
+                    Ok(*call)
                 }
                 Some(Entry::Return { variant }) => {
                     let v = ctx.pop()?;
@@ -252,7 +252,7 @@ impl Program {
                     Err(ext.not_found().into())
                 }
             }
-            CodeRef::Termination => Err(EvalError::EvalOnTermination.into()),
+            CodeRef::Termination => Err(EvalError::EvalOnTermination),
         }
     }
 }

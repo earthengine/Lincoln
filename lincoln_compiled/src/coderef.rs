@@ -70,8 +70,8 @@ impl CodeRef {
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct EntryRef(pub usize);
 impl EntryRef {
-    pub fn not_found(&self) -> CodeRefError {
-        CodeRefError::EntryNotFound { index: *self }
+    pub fn not_found(self) -> CodeRefError {
+        CodeRefError::EntryNotFound { index: self }
     }
     pub(crate) fn new_coderef(index: usize) -> CodeRef {
         EntryRef(index).into()
@@ -111,8 +111,8 @@ impl<'a> Access<'a, Program> for EntryRef {
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub struct ExternRef(pub usize);
 impl ExternRef {
-    pub fn not_found(&self) -> CodeRefError {
-        CodeRefError::ExternNotFound { index: *self }
+    pub fn not_found(self) -> CodeRefError {
+        CodeRefError::ExternNotFound { index: self }
     }
     pub(crate) fn new_coderef(index: usize) -> CodeRef {
         ExternRef(index).into()
@@ -184,39 +184,40 @@ impl GroupRef {
         let GroupRef(i) = self;
         let len = p.groups.len();
         if len <= i {
-            return Err(BuildError::GroupNotFound(GroupRef(i)));
+            Err(BuildError::GroupNotFound(GroupRef(i)))
         } else {
             let g = &p.groups[i];
             if g.len() <= idx as usize {
-                return Err(BuildError::VariangOutOfRange {
+                Err(BuildError::VariangOutOfRange {
                     given: idx,
                     max: g.len() as u8,
-                });
+                })
             } else {
-                Ok(g[idx as usize].clone())
+                Ok(g[idx as usize])
             }
         }
     }
     /// Retrive the index value
-    pub fn get_index(&self) -> usize {
+    pub fn get_index(self) -> usize {
         let GroupRef(i) = self;
-        *i
+        i
     }
-    pub(crate) fn push_to(&self, c: CodeRef, p: &mut Program) -> Result<(), BuildError> {
+    pub(crate) fn push_to(self, c: CodeRef, p: &mut Program) -> Result<(), BuildError> {
         let GroupRef(i) = self;
-        if *i > p.groups.len() {
-            return Err(BuildError::GroupNotFound(GroupRef(*i)));
+        if i > p.groups.len() {
+            return Err(BuildError::GroupNotFound(GroupRef(i)));
         }
-        Ok(p.groups[*i].push(c))
+        p.groups[i].push(c);
+        Ok(())
     }
-    pub(crate) fn get_vec(&self, p: &Program) -> Result<CodeGroup, EvalError> {
+    pub(crate) fn get_vec(self, p: &Program) -> Result<CodeGroup, EvalError> {
         let GroupRef(i) = self;
-        if *i > p.groups.len() {
+        if i > p.groups.len() {
             Err(EvalError::CodeRef(CodeRefError::InvalidGroupIndex {
-                index: *self,
+                index: self,
             }))
         } else {
-            Ok(p.groups[*i].clone())
+            Ok(p.groups[i].clone())
         }
     }
 }

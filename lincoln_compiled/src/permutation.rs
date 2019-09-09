@@ -15,20 +15,20 @@ pub const FACTS: [u64; 20] = [
     24,
     120,
     720,
-    5040,
-    40320,
-    362880,
-    3628800,
-    79833600,
-    958003200,
-    6227020800,
-    87178291200,
-    174356582400,
-    2615348736000,
-    41845579776000,
-    711374856192000,
-    12804747411456000,
-    243290200817664000,
+    5_040,
+    40_320,
+    362_880,
+    3_628_800,
+    79_833_600,
+    958_003_200,
+    6_227_020_800,
+    87_178_291_200,
+    174_356_582_400,
+    2_615_348_736_000,
+    41_845_579_776_000,
+    711_374_856_192_000,
+    12_804_747_411_456_000,
+    243_290_200_817_664_000,
 ];
 
 /// Represents a permutation of up to 20 positions.
@@ -85,14 +85,14 @@ impl Permutation {
     /// 
     /// values: the values to permutate
     /// 
-    pub fn permutate<T>(&self, values: &mut [T]) {
+    pub fn permutate<T>(self, values: &mut [T]) {
         let mut v = self.0;
         for i in 1..values.len() {
             let r = v % (i + 1) as u64;
             if r > 0 {
                 values.swap((r - 1) as usize, i)
             };
-            v = v / (i + 1) as u64;
+            v /= (i + 1) as u64;
         }
     }
     fn identical() -> Permutation {
@@ -108,13 +108,13 @@ impl Permutation {
         if j == 0 {
             return Self::identical();
         }
-        let (i, j) = (i as u64, j as u64);
+        let (i, j) = (u64::from(i), u64::from(j));
         Permutation(FACTS[(i + j - 1) as usize] * (i + 1))
     }
     /// Returns the minimal number of positions to perform the permutation
     /// 
     /// returns: the required number of positions
-    pub fn min_len(&self) -> u8 {
+    pub fn min_len(self) -> u8 {
         match FACTS.binary_search_by(|v| v.cmp(&self.0)) {
             Ok(n) => (n + 2) as u8,
             Err(0) => 0,
@@ -137,7 +137,7 @@ impl FromStr for Permutation {
         let mut v: SmallVec<[u8; 20]> = smallvec![];
         v.extend_from_slice(bs);
         let mut p = 0;
-        while v.len() > 0 {
+        while !v.is_empty() {
             let c = (b'a' as usize + v.len() - 1) as u8;
             let idx = v.iter().position(|v| *v == c);
             let idx = match idx {
@@ -160,7 +160,14 @@ mod test {
     use crate::permutation::Permutation;
     use std::str::FromStr;
     #[test]
+    fn test_parse() {
+        assert_eq!("ba".parse::<Permutation>().unwrap(), Permutation(1));
+    }
+
+    #[test]
     fn test_swap() {
+        assert_eq!("ba", format!("{}", Permutation(1)));
+
         assert_eq!(Permutation::swap(0, 1), Permutation(1));
         assert_eq!(Permutation::swap(0, 2), Permutation(2));
         assert_eq!(Permutation::swap(1, 1), Permutation(4));

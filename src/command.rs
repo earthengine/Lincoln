@@ -71,6 +71,7 @@ pub enum CommandContext {
 impl Display for CommandContext {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         use CommandContext::*;
+        let empty = "".into();
         match self {
             Idle { program, compiled } => write!(
                 fmt,
@@ -79,7 +80,7 @@ impl Display for CommandContext {
                 compiled
                     .as_ref()
                     .map(|v| format!("{:?}", v))
-                    .unwrap_or("".into())
+                    .unwrap_or(empty)
             ),
             Stepping {
                 program,
@@ -259,11 +260,10 @@ impl CommandContext {
     }
 
     fn parse_string(values: &str) -> Result<Vec<Box<dyn Value>>, Error> {
-        let reg = Regex::new(",")?;
         let us = Regex::new("(?P<value>[1-9]?[0-9]*|0)usize")?;
         let mut r = vec![];
-        for m in reg.split(values) {
-            if let Some(capture) = us.captures(m) {
+        for s in values.split(',') {
+            if let Some(capture) = us.captures(s) {
                 if let Some(value) = capture.name("value") {
                     r.push(lincoln_compiled::wrap(value.as_str().parse::<usize>()?))
                 }
@@ -354,7 +354,7 @@ impl CommandContext {
 }
 macro_rules! handle_cmd {
     ($cmd: ident, $c:expr, $pm:expr) => {
-        if let Some(_) = $c.name(stringify!($cmd)) {
+        if $c.name(stringify!($cmd)).is_some() {
             return $pm.$cmd($c);
         }
     };
@@ -374,7 +374,7 @@ pub fn process(c: Captures, ctx: &mut CommandContext) -> Result<bool, Error> {
     handle_cmd!(run, c, ctx);
     handle_cmd!(step, c, ctx);
     handle_cmd!(delete, c, ctx);
-    if let Some(_) = c.name("exit") {
+    if c.name("exit").is_some() {
         println!("{}", ctx);
         return Ok(false);
     }

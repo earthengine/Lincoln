@@ -15,44 +15,41 @@ pub struct PreCompileProgram {
 impl Display for PreCompileProgram {
     fn fmt(&self, fmt: &mut Formatter) -> std::fmt::Result {
         for (idx, ent) in self.entries.iter().enumerate() {
-            let label = self.find_name(&EntryRef::new(idx))?;
+            let label = self.find_name(EntryRef::new(idx))?;
             match ent {
                 Entry::Jmp { cont, per } => {
-                    write!(fmt, "{}: jmp {} #!{}\n", label, self.find_name(cont)?, per)?
+                    write!(fmt, "{}: jmp {} #!{}", label, self.find_name(*cont)?, per)?
                 }
                 Entry::Call {
                     callee,
                     callcnt,
                     callcont,
-                } => write!(
+                } => writeln!(
                     fmt,
-                    "{}: call {} {} {}\n",
+                    "{}: call {} {} {}",
                     label,
-                    self.find_name(callee)?,
+                    self.find_name(*callee)?,
                     callcnt,
-                    self.find_name(callcont)?
+                    self.find_name(*callcont)?
                 )?,
-                Entry::Ret { variant } => write!(fmt, "{}: ret {}\n", label, variant)?,
+                Entry::Ret { variant } => writeln!(fmt, "{}: ret {}", label, variant)?,
                 Entry::Group { elements } => {
                     write!(fmt, "{}: group ", label)?;
                     for element in elements.iter() {
-                        write!(fmt, "{} ", self.find_name(element)?)?;
+                        write!(fmt, "{} ", self.find_name(*element)?)?;
                     }
                     writeln!(fmt)?;
                 }
                 Entry::Extern { .. } => (),
             }
         }
-        writeln!(fmt, "")?;
+        writeln!(fmt)?;
         for ent in self.entries.iter() {
-            match ent {
-                Entry::Extern { name } => {
-                    writeln!(fmt, "extern {}", name)?;
-                }
-                _ => (),
+            if let Entry::Extern { name } = ent {
+                writeln!(fmt, "extern {}", name)?;
             }
         }
-        writeln!(fmt, "")?;
+        writeln!(fmt)?;
         for exp in self.exports.iter() {
             writeln!(fmt, "export {}", exp)?;
         }
@@ -93,9 +90,9 @@ impl PreCompileProgram {
                 ) => {
                     let _ = self.define_call(
                         name,
-                        other.find_name(callee)?,
+                        other.find_name(*callee)?,
                         *callcnt,
-                        other.find_name(callcont)?,
+                        other.find_name(*callcont)?,
                     )?;
                     if is_export {
                         self.set_export(name)?
@@ -104,7 +101,7 @@ impl PreCompileProgram {
                 (is_export, name, Entry::Group { elements }) => {
                     let mut v = vec![];
                     for element in elements {
-                        v.push(other.find_name(element)?)
+                        v.push(other.find_name(*element)?)
                     }
                     let _ = self.define_group(name, &v)?;
                     if is_export {
@@ -112,7 +109,7 @@ impl PreCompileProgram {
                     }
                 }
                 (is_export, name, Entry::Jmp { cont, per }) => {
-                    let _ = self.define_jmp(name, other.find_name(cont)?, per)?;
+                    let _ = self.define_jmp(name, other.find_name(*cont)?, per)?;
                     if is_export {
                         self.set_export(name)?
                     }
@@ -258,7 +255,7 @@ impl PreCompileProgram {
                 .enumerate()
                 .filter(|(i, _)| !sorted.contains(&EntryRef::new(*i)))
             {
-                error!("{}", self.find_name(&EntryRef::new(v.0))?);
+                error!("{}", self.find_name(EntryRef::new(v.0))?);
             }
             bail!("circular reference detected");
         }
@@ -306,7 +303,7 @@ impl PreCompileProgram {
             let ent = self
                 .defined_ent
                 .get(export)
-                .ok_or(format_err!("Invalid export"))?;
+                .ok_or_else(|| format_err!("Invalid export"))?;
             match ent.access(self) {
                 Ok(Entry::Group { .. }) => {
                     cm.add_export_group(*ent, name)?;
@@ -334,9 +331,9 @@ impl PreCompileProgram {
         }
     }
 
-    fn find_name(&self, entry: &EntryRef) -> Result<&str, std::fmt::Error> {
+    fn find_name(&self, entry: EntryRef) -> Result<&str, std::fmt::Error> {
         for e in self.defined_ent.iter() {
-            if entry == e.1 {
+            if entry == *e.1 {
                 return Ok(&e.0);
             }
         }
@@ -377,7 +374,7 @@ impl PreCompileProgram {
         cont: EntryRef,
         per: Permutation,
     ) -> Result<EntryRef, Error> {
-        let ent = Entry::Jmp { cont, per: per };
+        let ent = Entry::Jmp { cont, per };
         self.define_ent_internal(name, ent)
     }
     fn define_call_internal(
@@ -411,9 +408,9 @@ impl PreCompileProgram {
                 Entry::Call {
                     callee, callcont, ..
                 } => {
-                    if seed.iter().find(|e| *e == callee).is_some()
+                    if seed.iter().any(|e| *e == *callee)
                         && (callcont.is_group_in(self)
-                            || seed.iter().find(|e| *e == callcont).is_some())
+                            || seed.iter().any(|e| *e == *callcont))
                     {
                         Some(EntryRef::new(index))
                     } else {
@@ -421,7 +418,7 @@ impl PreCompileProgram {
                     }
                 }
                 Entry::Jmp { cont, .. } => {
-                    if let Some(_) = seed.iter().find(|e| *e == cont) {
+                    if seed.iter().any(|e| *e == *cont) {
                         Some(EntryRef::new(index))
                     } else {
                         None
@@ -429,9 +426,7 @@ impl PreCompileProgram {
                 }
                 Entry::Group { elements } => {
                     for element in elements {
-                        if let None = seed.iter().find(|e| *e == element) {
-                            return None;
-                        }
+                        seed.iter().find(|e| *e == element)?;
                     }
                     Some(EntryRef::new(index))
                 }
@@ -440,7 +435,7 @@ impl PreCompileProgram {
             })
             .collect()
     }
-    fn iterate<'name>(&'name self) -> impl Iterator<Item = (bool, &'name str, &'name Entry)> {
+    fn iterate(&self) -> impl Iterator<Item = (bool, &str, &Entry)> {
         struct PIterator<'name>(usize, &'name PreCompileProgram, Vec<EntryRef>);
         impl<'name> Iterator for PIterator<'name> {
             type Item = (bool, &'name str, &'name Entry);
@@ -449,7 +444,7 @@ impl PreCompileProgram {
                 let ent = entref.access(self.1);
                 if let Ok(ent) = ent {
                     let is_export = self.2.contains(&entref);
-                    let name = if let Ok(name) = self.1.find_name(&EntryRef::new(self.0)) {
+                    let name = if let Ok(name) = self.1.find_name(EntryRef::new(self.0)) {
                         name
                     } else {
                         return None;
@@ -476,13 +471,13 @@ impl PreCompileProgram {
         let mut i = 1;
         loop {
             let s2 = self.find_refs(&s1);
-            let s2: BTreeSet<EntryRef> = s2.difference(&s1).map(|e| *e).collect();
-            if s2.len() == 0 {
+            let s2: BTreeSet<EntryRef> = s2.difference(&s1).copied().collect();
+            if s2.is_empty() {
                 break;
             }
-            s1 = s1.union(&s2).map(|e| *e).collect();
+            s1 = s1.union(&s2).copied().collect();
             let _ = r.insert(i, s2);
-            i = i + 1;
+            i += 1;
         }
         r
     }

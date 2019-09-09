@@ -38,10 +38,10 @@ impl CodeMap {
         cont: EntryRef,
         per: Permutation,
     ) -> Result<(), CodeMapError> {
-        let cont = self
+        let cont = *self
             .coderef_map
             .get(&cont)
-            .ok_or(CodeMapError::EntryNotFound(cont))?.clone();
+            .ok_or(CodeMapError::EntryNotFound(cont))?;
         self.coderef_map.insert(ent, self.prog.add_jump(cont, per));
         Ok(())
     }
@@ -52,10 +52,10 @@ impl CodeMap {
         callcnt: u8,
         callcont: EntryRef,
     ) -> Result<(), CodeMapError> {
-        let call = self
+        let call = *self
             .coderef_map
             .get(&callee)
-            .ok_or(CodeMapError::EntryNotFound(callee))?.clone();
+            .ok_or(CodeMapError::EntryNotFound(callee))?;
         let cont = self.group_map.get(&callcont);
         // The continuation part of a `call` instruction is a group.
         // If the group has been defined, add a new entry to it.
