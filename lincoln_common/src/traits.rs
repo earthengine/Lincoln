@@ -16,13 +16,16 @@ pub trait StringLike {
         self.as_str().into()
     }
 }
-impl<T> StringLike for T where T: Into<String> + AsRef<str> {
+impl<T> StringLike for T
+where
+    T: Into<String> + AsRef<str>,
+{
     fn to_string(self) -> String {
         self.into()
     }
     fn as_str(&self) -> &str {
         self.as_ref()
-    }    
+    }
 }
 
 /// A trait for shared field access
@@ -36,7 +39,7 @@ pub trait Access<'a, Source> {
         'b: 'a;
 }
 /// A trait for mutable field access
-/// 
+///
 pub trait AccessMut<'a, Source> {
     /// The result type
     type Target: 'a;

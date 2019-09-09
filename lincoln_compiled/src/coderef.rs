@@ -13,7 +13,7 @@ pub enum CodeRef {
     /// An entry refers to a entry point of a program.
     Entry(EntryRef),
     /// Refers to an external function entry defined in a program.
-    Extern(ExternRef),    
+    Extern(ExternRef),
     /// Indicate the end of execution.
     Termination,
 }
@@ -63,7 +63,6 @@ impl CodeRef {
     pub fn ext(index: usize) -> Self {
         CodeRef::Extern(ExternRef(index))
     }
-
 }
 
 /// An `EntryRef` refers to an entry of a program.

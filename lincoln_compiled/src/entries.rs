@@ -28,9 +28,7 @@ impl EvalFn {
         EvalFn::Stateless(f)
     }
     /// Create from a stateful closure (will be boxed)
-    pub fn stateful(
-        bf: Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>,
-    ) -> Self {
+    pub fn stateful(bf: Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>) -> Self {
         EvalFn::Dyn(bf)
     }
 }

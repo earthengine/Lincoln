@@ -1,18 +1,14 @@
 use crate::coderef::{CodeRef, GroupRef};
+use crate::entries::ExternEntry;
 use crate::permutation::Permutation;
 use crate::program::Program;
-use crate::entries::ExternEntry;
 use crate::{EvalError, ValueAccessError};
 use core::fmt::{Debug, Display, Formatter};
 use lincoln_common::traits::{Access, AnyDebugDisplay};
 use smallvec::SmallVec;
 
 pub trait Value: AnyDebugDisplay {
-    fn eval(
-        self: Box<Self>,
-        ctx: &mut Context,
-        variant: u8,
-    ) -> Result<CodeRef, EvalError>;
+    fn eval(self: Box<Self>, ctx: &mut Context, variant: u8) -> Result<CodeRef, EvalError>;
     fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>>;
 }
 struct Closure(SmallVec<[CodeRef; 5]>, Context);
@@ -35,11 +31,7 @@ impl Display for Closure {
     }
 }
 impl Value for Closure {
-    fn eval(
-        mut self: Box<Self>,
-        ctx: &mut Context,
-        variant: u8,
-    ) -> Result<CodeRef, EvalError> {
+    fn eval(mut self: Box<Self>, ctx: &mut Context, variant: u8) -> Result<CodeRef, EvalError> {
         ctx.append(&mut self.1);
         //A closure without variants is "Termination"
         if self.0.is_empty() {
@@ -48,20 +40,20 @@ impl Value for Closure {
         let variant_cnt = self.0.len();
         //Variant 1 is "drop" for single variant closures. Requires no captured variables
         //Variant 2 is "copy" for single variant closures. Requires no captured variables
-        if variant as usize >= variant_cnt && (variant_cnt!=1 || (variant!=1 && variant!=2)) { 
+        if variant as usize >= variant_cnt && (variant_cnt != 1 || (variant != 1 && variant != 2)) {
             Err(EvalError::VariantOutOfBound {
                 given: variant,
                 max: variant_cnt as u8,
             })
-        } else if variant==1 && variant_cnt==1 {
+        } else if variant == 1 && variant_cnt == 1 {
             ctx.expect_args(1)?;
             let cont = ctx.pop()?;
             cont.eval(ctx, 0)
-        } else if variant==2 && variant_cnt==1 {
+        } else if variant == 2 && variant_cnt == 1 {
             ctx.expect_args(1)?;
             let cont = ctx.pop()?;
-            ctx.push(Box::new(Closure(self.0.clone(),Context::default())));
-            ctx.push(Box::new(Closure(self.0,Context::default())));
+            ctx.push(Box::new(Closure(self.0.clone(), Context::default())));
+            ctx.push(Box::new(Closure(self.0, Context::default())));
             cont.eval(ctx, 0)
         } else {
             Ok(self.0[variant as usize])
@@ -175,7 +167,7 @@ pub(crate) fn closure_prog(
 ) -> Result<Box<dyn Value>, EvalError> {
     if let Some(1) = ent.count(prog) {
         if let Ok(CodeRef::Extern(ext)) = ent.get_entry(prog, 0) {
-            if let Some(ExternEntry::Value{value,..}) = ext.access(prog) {
+            if let Some(ExternEntry::Value { value, .. }) = ext.access(prog) {
                 ctx.expect_args(0)?;
                 return Ok(value.get_value());
             }
@@ -206,11 +198,7 @@ impl<T> Value for Wrapped<T>
 where
     T: AnyDebugDisplay,
 {
-    fn eval(
-        self: Box<Self>,
-        _: &mut Context,
-        _: u8,
-    ) -> Result<CodeRef, EvalError> {
+    fn eval(self: Box<Self>, _: &mut Context, _: u8) -> Result<CodeRef, EvalError> {
         Err(EvalError::CallingWrapped)
     }
     fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>> {
@@ -227,7 +215,9 @@ pub fn unwrap<T>(v: Box<dyn Value>) -> Result<T, EvalError>
 where
     T: AnyDebugDisplay,
 {
-    let fail = EvalError::from(ValueAccessError::UnwrapNotWrapped("fail into_wrapped".into()));
+    let fail = EvalError::from(ValueAccessError::UnwrapNotWrapped(
+        "fail into_wrapped".into(),
+    ));
     Ok(v.into_wrapped()
         .ok_or(fail)?
         .into_boxed_any()
@@ -257,11 +247,7 @@ impl<F> Value for WrappedFn<F>
 where
     F: FnOnce(&mut Context, u8) -> Result<CodeRef, EvalError> + 'static,
 {
-    fn eval(
-        self: Box<Self>,
-        ctx: &mut Context,
-        variant: u8,
-    ) -> Result<CodeRef, EvalError> {
+    fn eval(self: Box<Self>, ctx: &mut Context, variant: u8) -> Result<CodeRef, EvalError> {
         self.1(ctx, variant)
     }
     fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>> {

@@ -138,7 +138,9 @@ impl PreCompileProgram {
         let labelent = self.defined_ent.get(label.as_str());
         if let Some(ent) = labelent {
             let ent = *ent;
-            *ent.access_mut(self)? = Entry::Extern { name: label.to_string() };
+            *ent.access_mut(self)? = Entry::Extern {
+                name: label.to_string(),
+            };
         }
         Ok(())
     }
@@ -232,7 +234,7 @@ impl PreCompileProgram {
     }
     /// Compile this program with a set of external functions
     ///
-    pub fn compile(&self, externs: impl Iterator<Item=ExternEntry>) -> Result<Program, Error> {
+    pub fn compile(&self, externs: impl Iterator<Item = ExternEntry>) -> Result<Program, Error> {
         let mut cm = CodeMap::new();
         let ds = self.dependency_sort();
         let sorted = ds
@@ -265,7 +267,7 @@ impl PreCompileProgram {
             externs_map.insert(name, ext);
         }
         // Starting from the lowest level, we add compiled instructions to the compiled program.
-        // 
+        //
         for (_level, entries) in ds {
             for entry in entries {
                 let entryref = entry;
@@ -320,7 +322,7 @@ impl PreCompileProgram {
         if idx < self.entries.len() {
             Ok(&self.entries[idx])
         } else {
-            bail!("Invalid entry ref for PM") 
+            bail!("Invalid entry ref for PM")
         }
     }
     pub(crate) fn entry_mut(&mut self, idx: usize) -> Result<&mut Entry, Error> {
@@ -409,8 +411,7 @@ impl PreCompileProgram {
                     callee, callcont, ..
                 } => {
                     if seed.iter().any(|e| *e == *callee)
-                        && (callcont.is_group_in(self)
-                            || seed.iter().any(|e| *e == *callcont))
+                        && (callcont.is_group_in(self) || seed.iter().any(|e| *e == *callcont))
                     {
                         Some(EntryRef::new(index))
                     } else {

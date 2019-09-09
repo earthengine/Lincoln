@@ -4,7 +4,7 @@ use failure::Error;
 
 /// Errors may occur during building
 #[derive(Fail, Debug)]
-pub enum BuildError {    
+pub enum BuildError {
     #[fail(display = "Group {:?} not found", _0)]
     GroupNotFound(GroupRef),
     #[fail(display = "Given variant {} exceed limit {}", given, max)]
@@ -32,7 +32,7 @@ pub enum EvalError {
     #[fail(display = "{}", _0)]
     ValueAccess(ValueAccessError),
     #[fail(display = "{}", _0)]
-    External(Error)
+    External(Error),
 }
 impl From<CodeRefError> for EvalError {
     fn from(e: CodeRefError) -> Self {
