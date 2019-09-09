@@ -1,0 +1,28 @@
+export fact
+
+extern @copy_int
+extern @one
+extern @try_minus
+extern @mul
+extern @drop_int
+
+fact := c n
+    let f =
+        .call := 
+            fact
+        .drop := c
+            c
+    @copy_int n -> n n1
+    @one -> o
+    @try_minus n o ->
+        .ok := n
+            let c =
+                _ n :=
+                    @mul n n1 ->
+                    c n
+            f.call c n
+        .err := n o
+            @drop_int n ->
+            @drop_int n1 ->
+            f.drop ->
+            c o

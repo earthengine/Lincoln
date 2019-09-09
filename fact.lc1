@@ -1,19 +1,24 @@
 export fact
 
 fact c n :=
-    f =
-        call == fact
+    let f =
+        call := fact
         drop c := c
-    copy_int n -> n1 n2
-    one -> o
-    try_minus n1 o ->
-        ok n :=
-            c = _ n :=
-                mul n n2 -> n
-                c n
-            f.call c n
-        err n o :=
-            drop_int n ->
-            drop_int n2 ->
-            f.drop ->
-            c o
+    let c n1 n2 := 
+        let c o :=
+            let c :=
+                ok n :=
+                    c = _ n :=
+                        let c := c n
+                        mul n n2 c
+                    f.call c n
+                err n o :=
+                    let c := 
+                        let c :=
+                            let c := c o
+                            f.drop c
+                        drop_int n2
+                    drop_int n
+            try_minus n1 o c
+        one c
+    copy_int n c

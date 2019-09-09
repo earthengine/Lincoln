@@ -6,10 +6,14 @@ extern crate quick_error;
 extern crate serde_derive;
 #[macro_use]
 extern crate serde_json;
+#[macro_use]
+extern crate display_derive;
 
 use std::collections::HashMap;
 use lincoln_common::traits::{StringLike, Access};
 use serde::{Serialize, Deserialize};
+
+pub mod types;
 
 quick_error! {
     #[derive(Debug)]
@@ -111,6 +115,7 @@ mod tests {
         assert_eq!(serde_json::to_string(&b).unwrap(), "{\"args\":[],\"assignments\":[],\"call\":{\"callee\":\"c\",\"args\":[\"n\"]}}");
     }
     #[test]
+    #[ignore]
     fn test_1() {
         let c = get_call(&["c", "o"], None);
         let b = get_block(&[], c);

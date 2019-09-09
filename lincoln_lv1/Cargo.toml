@@ -12,3 +12,5 @@ quick-error="1.2"
 lincoln_common={version="0.1", path="../lincoln_common"}
 lincoln_compiled={version="0.1", path="../lincoln_compiled"}
 lincoln_ir={version="0.1", path="../lincoln_ir"}
+smallvec="0.6"
+display_derive="0.0"

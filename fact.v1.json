@@ -1,0 +1,60 @@
+{
+    "externs": {
+        "copy_int":{"nopt":{"_":["N",{"nopt":{"_":["N","N"]}}]}},
+        "one":{"ntuple":[{"nopt":["N"]}]},
+        "try_minus":{"ntuple":[{"nopt":[{"ok":["N"]},[{"err":["N","N"]}]]},"N","N"]},
+        "mul":{"ntuple":[{"ntuple":["N"]},"N","N"]},
+        "drop_int":{"ntuple":["N",{"ntuple":[]}]} 
+    },
+    "defs": {
+        "fact":{"type": {"ntuple":[{"ntuple":["N"]},"N"]},
+            "default":{
+                "args": {"k":{"ntuple":["N"]},"n":"N"},
+                "body": {"copy_int":["n", "c1"]},
+                "assignments": {
+                    "f":{"type":{"nopt":{"call":[{"ntuple":["N"]},"N"], "drop":[{"ntuple":[]}]}}, 
+                        "variants": {
+                            "call":{"type":{"ntuple":[{"ntuple":["N"]},"N"]}, "body":{"fact":[]}},
+                            "drop":{"type":{"ntuple":[{"ntuple":[]}]}, "args":{"c2":{"ntuple":[]}}, "body":{"c2":[]}}
+                        }
+                    },
+                    "c1":{"type":[{"ntuple":["N","N"]}],
+                        "default": {
+                            "args": {"n1":"N","n2":"N"},
+                            "body":{"one":["c3"]},
+                            "assignments":{
+                                "c3":{"type":{"ntuple":["N"]}, "args":{"o1":"N"},
+                                    "default": {
+                                        "body":{"try_minus":["c4","n1","o1"]},
+                                        "assignments":{
+                                            "c4":{"type":{"nopt":[{"ok":["N"]},[{"err":["N","N"]}]]},
+                                                "variants":{
+                                                    "ok":{"type":{"ntuple":["N"]},"args":{"n3":"N"},"body":{"f":{"variant":"call", "args": ["c5","n3"]}},
+                                                        "assignments": {
+                                                            "c5":{"type":{"ntuple":["N"]},"args":{"n4":"N"},"body":{"mul":["k","n4","n2"]}}
+                                                        }
+                                                    },
+                                                    "err":{"type":{"ntuple":["N","N"]},"args":{"n5":"N","o2":"N"},"body":{"drop_int":["n5","c8"]},
+                                                        "assignments": {
+                                                            "c8":{"type":{"ntuple":[]}, "default":{"body":{"drop_int":["n2","c9"]},
+                                                                "assignments":{
+                                                                    "c9":{"type":{"ntype":[]}, "default":{"body":{"f":{"variant":"drop","args":["c10"]}},
+                                                                        "assignments":{"c10":{"type":{"ntype":[]}, "default":{"body":{"k":["o2"]}}}}}}
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

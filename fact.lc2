@@ -5,16 +5,16 @@ extern mul::~(~(N),N,N)
 extern drop_int::~(N,~())
 
 fact::~(~N,N) k::~(N) n::N :=
-	copy_int n c1::~(N,N) where
+	copy_int n c1::~(N,N) ->
 	f::{call: ~(~N,N); drop:~(~())}:=
 		call:=fact
 		drop c2::~() := c2
-	c1 n1::N n2::N := one c3 where
-	c3::~(N) o1::N := try_minus c4 n1 o1 where
+	c1 n1::N n2::N := one c3 ->
+	c3::~(N) o1::N := try_minus c4 n1 o1 ->
 		c4::{ok:~N; err:~(N,N)} := 
-			ok n3::N := f.call c5 n3 where
+			ok n3::N := f.call c5 n3 ->
 				c5::~N n4 := mul k n4 n2
-			err n5:N o2:N := drop_int n5 c8 where
-				   c8::~() := drop_int n2 c9 where
-				   c9::~() := f.drop c10 where
+			err n5:N o2:N := drop_int n5 c8 ->
+				   c8::~() := drop_int n2 c9 ->
+				   c9::~() := f.drop c10 ->
 			           c10::~() := k o2
