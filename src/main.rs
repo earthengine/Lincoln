@@ -59,10 +59,11 @@ fn main() -> Result<(), Error> {
         rl.save_history("history.txt")?;
 
         if let Some(c) = commands.captures(&line) {
-            if let Err(e) = process(c, &mut cmdctx) {
-                error!("{}", e);                
+            match process(c, &mut cmdctx) {
+                Ok(true) => continue,
+                Ok(false) => return Ok(()),
+                Err(e) => error!("{}", e),               
             }
-            return Ok(());
         } else {
             print_help();
         }

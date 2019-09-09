@@ -18,7 +18,7 @@ impl Display for PreCompileProgram {
             let label = self.find_name(EntryRef::new(idx))?;
             match ent {
                 Entry::Jmp { cont, per } => {
-                    write!(fmt, "{}: jmp {} #!{}", label, self.find_name(*cont)?, per)?
+                    writeln!(fmt, "{}: jmp {} #!{}", label, self.find_name(*cont)?, per)?
                 }
                 Entry::Call {
                     callee,
