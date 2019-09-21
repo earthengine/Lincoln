@@ -12,23 +12,23 @@ pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 /// It can be a function pointer or a
 /// boxed closure.
 pub enum EvalFn {
-    Stateless(fn(&mut Context) -> Result<CodeRef, EvalError>),
-    Dyn(Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>),
+    Stateless(fn(&mut dyn Context) -> Result<CodeRef, EvalError>),
+    Dyn(Box<dyn Fn(&mut dyn Context) -> Result<CodeRef, EvalError>>),
 }
 impl EvalFn {
     /// Call the internal function to evaluate the result
-    pub fn eval(&self, ctx: &mut Context) -> Result<CodeRef, EvalError> {
+    pub fn eval(&self, ctx: &mut dyn Context) -> Result<CodeRef, EvalError> {
         match self {
             EvalFn::Stateless(f) => f(ctx),
             EvalFn::Dyn(bf) => bf(ctx),
         }
     }
     /// Create from a stateless closure or function
-    pub fn stateless(f: fn(&mut Context) -> Result<CodeRef, EvalError>) -> Self {
+    pub fn stateless(f: fn(&mut dyn Context) -> Result<CodeRef, EvalError>) -> Self {
         EvalFn::Stateless(f)
     }
     /// Create from a stateful closure (will be boxed)
-    pub fn stateful(bf: Box<dyn Fn(&mut Context) -> Result<CodeRef, EvalError>>) -> Self {
+    pub fn stateful(bf: Box<dyn Fn(&mut dyn Context) -> Result<CodeRef, EvalError>>) -> Self {
         EvalFn::Dyn(bf)
     }
 }

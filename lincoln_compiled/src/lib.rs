@@ -21,7 +21,7 @@ pub use error::{BuildError, CodeRefError, EvalError, ValueAccessError};
 pub use lincoln_common::traits::Access;
 pub use permutation::{AsPermutation, Permutation};
 pub use program::Program;
-pub use value::{native_closure, unwrap, wrap, Context, Value};
+pub use value::{native_closure, unwrap, wrap, Context, Value, default_context, ContextExt};
 
 /// The crate contains definitions for a "compiled" prgram,
 /// which contains low level instructions.

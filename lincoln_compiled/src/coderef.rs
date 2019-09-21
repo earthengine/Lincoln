@@ -78,7 +78,7 @@ impl EntryRef {
 }
 impl std::fmt::Debug for EntryRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "🎯-{}", self.0)
+        write!(fmt, "E🎯-{}", self.0)
     }
 }
 impl std::fmt::Display for EntryRef {
@@ -119,7 +119,7 @@ impl ExternRef {
 }
 impl std::fmt::Debug for ExternRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "🗨-{}", self.0)
+        write!(fmt, "X🗨-{}", self.0)
     }
 }
 impl std::fmt::Display for ExternRef {
@@ -154,7 +154,7 @@ impl<'a> Access<'a, Program> for ExternRef {
 pub struct GroupRef(usize);
 impl std::fmt::Debug for GroupRef {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(fmt, "🎎-{}", self.0)
+        write!(fmt, "G🎎-{}", self.0)
     }
 }
 impl std::fmt::Display for GroupRef {

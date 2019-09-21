@@ -1,6 +1,6 @@
 use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
-use crate::value::{closure_prog, Context};
+use crate::value::{closure_prog, Context, ContextExt};
 use crate::{BuildError, EvalError, Permutation};
 use failure::Error;
 use lincoln_common::traits::{Access, StringLike};
@@ -182,7 +182,7 @@ impl Program {
     ///
     pub fn run(
         &self,
-        ctx: &mut Context,
+        ctx: &mut dyn Context,
         export_label: impl StringLike,
         variant: u8,
         rounds: Option<usize>,
@@ -213,7 +213,7 @@ impl Program {
     /// ent: the current code entry
     ///
     /// returns: the next code entry, or an error
-    pub fn eval(&self, ctx: &mut Context, ent: &CodeRef) -> Result<CodeRef, EvalError> {
+    pub fn eval(&self, ctx: &mut dyn Context, ent: &CodeRef) -> Result<CodeRef, EvalError> {
         debug!("eval {:?} {}", ent, ctx);
         match ent {
             CodeRef::Entry(ent) => match ent.access(self) {

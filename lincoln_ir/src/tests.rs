@@ -3,10 +3,7 @@ mod test {
     use crate::PreCompileProgram;
     use failure::Error;
     use lincoln_compiled::CodeRef::Termination;
-    use lincoln_compiled::Context;
-    use lincoln_compiled::EvalFn;
-    use lincoln_compiled::ExternEntry;
-    use lincoln_compiled::{unwrap, wrap};
+    use lincoln_compiled::{Context, ContextExt, EvalFn, ExternEntry, unwrap, wrap, default_context};
     #[test]
     fn test_call_ret() -> Result<(), Error> {
         let mut prog: PreCompileProgram = Default::default();
@@ -29,16 +26,16 @@ mod test {
                 .into_iter(),
             )
             .unwrap();
-        let mut ctx = Context::default();
+        let mut ctx = default_context();
         ctx.push(wrap(1i32));
         ctx.push(wrap(2i32));
         ctx.push(wrap(3i32));
         let mut next = cprog.get_export_ent("test", 0).unwrap();
-        next = cprog.eval(&mut ctx, &next).unwrap();
-        assert_eq!(format!("{:?}", next), "🎯-0");
-        next = cprog.eval(&mut ctx, &next).unwrap();
-        assert_eq!(format!("{:?}", next), "🗨-0");
-        next = cprog.eval(&mut ctx, &next).unwrap();
+        next = cprog.eval(&mut *ctx, &next).unwrap();
+        assert_eq!(format!("{:?}", next), "E🎯-0");
+        next = cprog.eval(&mut *ctx, &next).unwrap();
+        assert_eq!(format!("{:?}", next), "X🗨-0");
+        next = cprog.eval(&mut *ctx, &next).unwrap();
         assert_eq!(format!("{:?}", next), "🛑");
 
         Ok(())
@@ -73,16 +70,16 @@ mod test {
             )
             .unwrap();
 
-        let mut ctx = Context::default();
+        let mut ctx = default_context();
         ctx.push(wrap(1i32));
         ctx.push(wrap(2i32));
         ctx.push(wrap(3i32));
         let mut next = cprog.get_export_ent("test", 0).unwrap();
-        next = cprog.eval(&mut ctx, &next).unwrap();
-        assert_eq!(format!("{:?}", next), "🗨-0");
-        next = cprog.eval(&mut ctx, &next).unwrap();
-        assert_eq!(format!("{:?}", next), "🗨-1");
-        next = cprog.eval(&mut ctx, &next).unwrap();
+        next = cprog.eval(&mut *ctx, &next).unwrap();
+        assert_eq!(format!("{:?}", next), "X🗨-0");
+        next = cprog.eval(&mut *ctx, &next).unwrap();
+        assert_eq!(format!("{:?}", next), "X🗨-1");
+        next = cprog.eval(&mut *ctx, &next).unwrap();
         assert_eq!(format!("{:?}", next), "🛑");
 
         Ok(())

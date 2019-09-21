@@ -62,7 +62,7 @@ fn main() -> Result<(), Error> {
             match process(c, &mut cmdctx) {
                 Ok(true) => continue,
                 Ok(false) => return Ok(()),
-                Err(e) => error!("{}", e),               
+                Err(e) => error!("{}", e),
             }
         } else {
             print_help();

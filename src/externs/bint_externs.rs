@@ -1,4 +1,4 @@
-use lincoln_compiled::{EvalError, ExternEntry};
+use lincoln_compiled::{ContextExt, EvalError, ExternEntry};
 
 eval_fn_untyped!(_from(c), 2, [v, cont], {
     let v = lincoln_compiled::unwrap::<usize>(v)?;

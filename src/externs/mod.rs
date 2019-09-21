@@ -24,7 +24,7 @@ macro_rules! var_unwrap {
     ($ctx:ident, []:[]) => {
     };
     ($ctx:ident, [$var:ident]:[$typ:ty]) => {
-        let $var = lincoln_compiled::unwrap::<$typ>($ctx.pop()?)?;
+        let $var = lincoln_compiled::unwrap::<$typ>(<_ as lincoln_compiled::ContextExt>::pop($ctx)?)?;
     };
     ($ctx:ident, [$var:ident,$($vars:ident),+]:[$typ:ty,$($typs:ty),+]) => {
         var_unwrap!($ctx, [$var]: [$typ]);
@@ -63,11 +63,11 @@ macro_rules! var_pop {
 macro_rules! eval_fn {
     ($name:ident($ctx:ident), $varcnt:expr, $cont:ident, [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
         pub fn $name(
-            $ctx: &mut lincoln_compiled::Context,
+            $ctx: &mut dyn lincoln_compiled::Context,
         ) -> Result<lincoln_compiled::CodeRef,
             lincoln_compiled::EvalError,
         > {
-            $ctx.expect_args($varcnt)?;
+            <_ as lincoln_compiled::ContextExt>::expect_args($ctx, $varcnt)?;
             let $cont = $ctx.pop()?;
             var_unwrap!($ctx, [$($var),*]:[$($typ),*]);
 
@@ -88,9 +88,9 @@ macro_rules! eval_fn {
 macro_rules! eval_fn_untyped {
     ($name:ident($ctx:ident), $varcnt:expr, [$($var:ident),*], $blk:block) => {
         pub fn $name(
-            $ctx: &mut lincoln_compiled::Context,
+            $ctx: &mut dyn lincoln_compiled::Context,
         ) -> Result<lincoln_compiled::CodeRef, lincoln_compiled::EvalError> {
-            $ctx.expect_args($varcnt)?;
+            <_ as lincoln_compiled::ContextExt>::expect_args($ctx, $varcnt)?;
             var_pop!($ctx,[$($var),*]);
 
             $blk
@@ -110,7 +110,7 @@ macro_rules! eval_fn_untyped {
 ///
 macro_rules! eval_fn_term {
     ($name:ident($ctx:ident), [$($var:ident),*]:[$($typ:ty),*], $blk:block) => {
-pub fn $name($ctx: &mut lincoln_compiled::Context) ->
+pub fn $name($ctx: &mut dyn lincoln_compiled::Context) ->
     Result<lincoln_compiled::CodeRef, lincoln_compiled::EvalError>
 {
     var_unwrap!($ctx, [$($var),*]:[$($typ),*]);

@@ -6,7 +6,7 @@ use failure::Error;
 use lincoln_common::traits::Access;
 use lincoln_compiled::CodeRef;
 use lincoln_compiled::Program;
-use lincoln_compiled::{Context, Value};
+use lincoln_compiled::{Context, ContextExt, Value};
 use lincoln_ir::PreCompileProgram;
 use regex::{Captures, Regex};
 use std::fs::File;
@@ -63,7 +63,7 @@ pub enum CommandContext {
     Stepping {
         program: PreCompileProgram,
         compiled: Program,
-        context: Context,
+        context: Box<dyn Context>,
         current: CodeRef,
         round: usize,
     },
@@ -286,7 +286,7 @@ impl CommandContext {
         let values = c.name("value").expect("value is none").as_str();
         let values = Self::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
-        let mut ctx: Context = Default::default();
+        let mut ctx: Box<dyn Context> = lincoln_compiled::default_context();
         ctx.push(lincoln_compiled::native_closure("print", |c, _| print(c)));
         for value in values {
             ctx.push(value);
@@ -309,7 +309,7 @@ impl CommandContext {
         }
 
         if !step {
-            compiled.run(&mut ctx, entry, variant, None)?;
+            compiled.run(&mut *ctx, entry, variant, None)?;
         } else {
             let entry = compiled.get_export_ent(entry, variant)?;
             println!("{:?} {}", entry, ctx);
@@ -328,7 +328,7 @@ impl CommandContext {
     }
     fn step(&mut self, _c: Captures) -> Result<bool, Error> {
         use CommandContext::*;
-        let (program, compiled, mut context, current, round) = match self {
+        let (program, compiled, context, current, round) = match self {
             Stepping {
                 compiled,
                 context,
@@ -338,7 +338,7 @@ impl CommandContext {
             } => (program, compiled, context, current, round),
             _ => bail!("Not in stepping mode. Run the program in step mode first."),
         };
-        let next = compiled.eval(&mut context, &current)?;
+        let next = compiled.eval(&mut **context, &current)?;
         *round += 1;
         if let CodeRef::Termination = next {
             *self = Idle {

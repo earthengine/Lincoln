@@ -1,4 +1,4 @@
-use lincoln_compiled::ExternEntry;
+use lincoln_compiled::{ContextExt, ExternEntry};
 
 eval_fn!(_eq(c), 3, cont, [n1, n2]:[usize,usize], {
     debug!("{}=={}: {}", n2, n1, n2 == n1);
