@@ -6,6 +6,7 @@ extern crate web_sys;
 
 mod lincoln_int;
 mod lincoln_jsvalue;
+mod lincoln_context;
 
 use lincoln_jsvalue::JsResult;
 use wasm_bindgen::prelude::*;

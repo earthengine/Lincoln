@@ -18,6 +18,8 @@ use wrapped::Wrapped;
 use wrapped_fn::WrappedFn;
 use context::ContextImpl;
 
+/// Build a closure value from a group reference, a context and program
+/// 
 pub(crate) fn closure_prog(
     ent: GroupRef,
     ctx: Box<dyn Context>,
