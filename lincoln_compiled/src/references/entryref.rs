@@ -1,8 +1,8 @@
+use super::CodeRef;
 use crate::entries::Entry;
+use crate::error::CodeRefError;
 use crate::program::Program;
 use lincoln_common::traits::Access;
-use super::CodeRef;
-use crate::error::CodeRefError;
 
 /// An `EntryRef` refers to an entry of a program.
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord, Hash)]

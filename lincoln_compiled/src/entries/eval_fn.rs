@@ -1,5 +1,5 @@
-use crate::error::EvalError;
 use super::CodeRef;
+use crate::error::EvalError;
 use crate::Context;
 
 /// Represents an external function that can be evaluated

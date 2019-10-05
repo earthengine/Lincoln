@@ -1,16 +1,16 @@
-use crate::coderef::{CodeRef, GroupRef};
 use crate::permutation::Permutation;
+use crate::references::{CodeRef, GroupRef};
 use smallvec::SmallVec;
 
 mod eval_fn;
-mod value_fn;
-mod extern_entry;
 mod export_entry;
+mod extern_entry;
+mod value_fn;
 
 pub use eval_fn::EvalFn;
-pub use value_fn::ValueFn;
-pub use extern_entry::ExternEntry;
 pub use export_entry::ExportEntry;
+pub use extern_entry::ExternEntry;
+pub use value_fn::ValueFn;
 
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 

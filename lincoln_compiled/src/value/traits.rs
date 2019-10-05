@@ -1,20 +1,33 @@
-use crate::permutation::Permutation;
-use crate::error::ValueAccessError;
-use core::fmt::Display;
+use super::CodeRef;
 use crate::error::EvalError;
-use crate::coderef::CodeRef;
+use crate::error::ValueAccessError;
+use crate::permutation::Permutation;
+use core::fmt::Display;
+use core::iter::once;
+use lincoln_common::mut_box_to_mut;
 use lincoln_common::traits::AnyDebugDisplay;
+
+pub trait Acceptor<Value> {
+    type Output;
+    fn accept(&mut self, v: Value);
+    fn finish(self) -> Self::Output;
+}
 
 pub trait Value: AnyDebugDisplay {
     fn eval(self: Box<Self>, ctx: &mut dyn Context, variant: u8) -> Result<CodeRef, EvalError>;
     fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>>;
+    fn take(&mut self) -> Box<dyn Value>;
 }
-pub trait Context : Display {
+pub trait Context: Display {
+    fn empty_value(&self) -> Box<dyn Value>;
     fn create_empty(&self) -> Box<dyn Context>;
     fn permutate(&mut self, per: Permutation);
-    fn take_many(&mut self, values: &mut [Option<Box<dyn Value>>]) -> u8;
-    fn put_many(&mut self, values: Vec<Box<dyn Value>>);
+    fn take_after(&mut self, at: u8, values_accepter: &mut dyn FnMut(&mut dyn Value)) -> u8;
+    fn put_many(&'_ mut self, values: &mut dyn Iterator<Item = &mut dyn Value>);
     fn len(&self) -> u8;
+    fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 /// A handy function for external functions. It checks that
@@ -22,33 +35,37 @@ pub trait Context : Display {
 ///
 /// args: the number of arguments expected.
 ///
-pub trait ContextExt : Context {
+pub trait ContextExt: Context {
     fn pop(&mut self) -> Result<Box<dyn Value>, ValueAccessError> {
-        let mut values = [None];
-        self.take_many(&mut values);
-        if values[0].is_none() {
+        let mut values = [self.empty_value()];
+        let c = self.take_after(self.len() - 1, &mut |value| {
+            values[0] = value.take();
+        });
+        if c < 1 {
             Err(ValueAccessError::PopFromEmpty)
         } else {
-            Ok(values[0].take().unwrap())
+            Ok(values[0].take())
         }
     }
-    fn push(&mut self, v: Box<dyn Value>) {
-        self.put_many(vec![v]);
+    fn push(&mut self, mut v: Box<dyn Value>) {
+        self.put_many(&mut once(&mut *v));
     }
 
-    fn split(&mut self, at: u8) -> Result<Box<dyn Context>, ValueAccessError> {
-        if self.len() < at {
-            return Err(ValueAccessError::SplitOutOfRange { at: 2, total: self.len() });
+    fn split(&mut self, cnt: u8) -> Result<Box<dyn Context>, ValueAccessError> {
+        if self.len() < cnt {
+            return Err(ValueAccessError::SplitOutOfRange {
+                at: 2,
+                total: self.len(),
+            });
         }
-        let taken = self.len() - at;
-        let mut val:Vec<Option<Box<dyn Value>>> = Vec::with_capacity(taken as usize);
-        val.resize_with(taken as usize, || None);
-        self.take_many(&mut val);
+        let mut values = vec![];
+        self.take_after(cnt, &mut |value| {
+            values.push(value.take());
+        });
 
         let mut result = self.create_empty();
-        let val:Vec<Box<dyn Value>> = val.into_iter().map(|x:Option<Box<dyn Value>>| x.unwrap()).collect();
-        result.put_many(val);
-        Ok(result)        
+        result.put_many(&mut values.iter_mut().map(mut_box_to_mut));
+        Ok(result)
     }
     fn expect_args(&self, args: u8) -> Result<(), EvalError> {
         if self.len() != args {
@@ -65,14 +82,11 @@ pub trait ContextExt : Context {
     /// other: the other context to merge
     ///
     fn append(&mut self, other: &mut dyn Context) {
-        let mut values:Vec<Option<Box<dyn Value>>> = Vec::with_capacity(other.len() as usize);
-        values.resize_with(other.len() as usize, || None);
-        other.take_many(&mut values);
-        let values:Vec<Box<dyn Value>> = values.into_iter().map(|x| x.unwrap()).collect();
-        self.put_many(values);
-    }
-    fn is_empty(&self) -> bool {
-        self.len()==0
+        let mut values = vec![];
+        other.take_after(0, &mut |value| {
+            values.push(value.take());
+        });
+        self.put_many(&mut values.iter_mut().map(mut_box_to_mut));
     }
 }
 

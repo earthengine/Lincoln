@@ -8,20 +8,20 @@ extern crate smallvec;
 #[macro_use]
 extern crate log;
 
-mod coderef;
 mod entries;
 mod error;
 mod permutation;
 mod program;
+mod references;
 mod value;
 
-pub use coderef::{CodeRef, GroupRef};
 pub use entries::{EvalFn, ExternEntry, ValueFn};
 pub use error::{BuildError, CodeRefError, EvalError, ValueAccessError};
 pub use lincoln_common::traits::Access;
 pub use permutation::{AsPermutation, Permutation};
 pub use program::Program;
-pub use value::{native_closure, unwrap, wrap, Context, Value, default_context, ContextExt};
+pub use references::{CodeRef, GroupRef};
+pub use value::{default_context, native_closure, unwrap, wrap, Context, ContextExt, Value};
 
 /// The crate contains definitions for a "compiled" prgram,
 /// which contains low level instructions.

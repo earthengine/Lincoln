@@ -138,12 +138,12 @@ pub mod bint_externs;
 pub mod fact_externs;
 
 eval_fn_term!(print(c), []:[], {
-    if c.len()==0 {
+    if c.is_empty() {
         println!("no result!");
     } else {
         let mut i=1;
         let len=c.len();
-        while c.len()>0 {
+        while !c.is_empty() {
             var_unwrap!(c, [v]:[usize]);
             println!("Result({}/{}): {}", i,len,v);
             i+=1;

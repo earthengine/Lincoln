@@ -1,5 +1,5 @@
+use super::{EvalFn, ValueFn};
 use core::hash::{Hash, Hasher};
-use super::{ValueFn, EvalFn};
 
 /// An `ExternEntry` refer to a function provided by the external function.
 ///

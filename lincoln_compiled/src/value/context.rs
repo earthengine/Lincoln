@@ -1,5 +1,6 @@
+use super::closure::Closure;
+use super::{Context, Value};
 use crate::permutation::Permutation;
-use super::{Value, Context};
 
 /// A Context is a container of values.
 /// Ideally it should not have more than 20 elements
@@ -21,26 +22,18 @@ impl std::fmt::Display for ContextImpl {
     }
 }
 impl Context for ContextImpl {
+    fn empty_value(&self) -> Box<dyn Value> {
+        Box::new(Closure {
+            tags: vec![],
+            context: self.create_empty(),
+        })
+    }
     fn create_empty(&self) -> Box<dyn Context> {
         Box::new(ContextImpl::default())
     }
     fn len(&self) -> u8 {
-        return self.0.len() as u8
+        self.0.len() as u8
     }
-    fn take_many(&mut self, values: &mut [Option<Box<dyn Value>>]) -> u8 {
-        let mylen = self.len() as usize;
-        let split_at = if mylen > values.len() { values.len() } else { mylen };
-        let split_at = mylen - split_at;
-        let r = self.0.split_off(split_at);
-        for (i,v) in r.into_iter().enumerate(){
-            values[i] = Some(v);
-        }
-        return split_at as u8;
-    }
-    fn put_many(&mut self, mut values: Vec<Box<dyn Value>>) {
-        self.0.append(&mut values);
-    }
-
     /// Perform a permutation over the values.
     ///
     /// p: the permutation to perform.
@@ -48,7 +41,44 @@ impl Context for ContextImpl {
     fn permutate(&mut self, p: Permutation) {
         p.permutate(&mut self.0)
     }
+    fn take_after(&mut self, at: u8, values_accepter: &mut dyn FnMut(&mut dyn Value)) -> u8 {
+        let at = if self.0.len() < at as usize {
+            0
+        } else {
+            at as usize
+        };
+        let mut values = self.0.split_off(at);
+        for value in values.iter_mut() {
+            values_accepter(&mut **value);
+        }
+        values.len() as u8
+    }
+    fn put_many(&mut self, values: &mut dyn Iterator<Item = &mut dyn Value>) {
+        self.0.extend(values.map(|x| x.take()));
+    }
 }
 impl Drop for ContextImpl {
     fn drop(&mut self) {}
+}
+
+#[cfg(test)]
+mod test {
+    use crate::value::context::ContextImpl;
+    use crate::value::traits::{Context, ContextExt};
+    use crate::value::{unwrap, wrap};
+    #[test]
+    fn test_take_values() {
+        let mut c = ContextImpl(vec![]);
+        c.push(wrap(10i32));
+        assert_eq!(1, c.take_after(0, &mut |v| ()));
+    }
+
+    #[test]
+    fn test_pop_push() {
+        let mut c = ContextImpl(vec![]);
+        c.push(wrap(10i32));
+        assert_eq!(1, c.len());
+        assert_eq!(10i32, unwrap::<i32>(c.pop().unwrap()).unwrap());
+        assert!(c.is_empty());
+    }
 }

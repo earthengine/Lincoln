@@ -1,5 +1,5 @@
-use crate::coderef::ExternRef;
-use crate::coderef::entryref::EntryRef;
+use super::entryref::EntryRef;
+use super::ExternRef;
 
 /// CodeRef is a type refer to a single executable entry.
 /// This can be either a entry of a program, an external

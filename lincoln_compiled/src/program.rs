@@ -1,5 +1,5 @@
-use crate::coderef::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
+use crate::references::{CodeRef, EntryRef, ExternRef, GroupRef};
 use crate::value::{closure_prog, Context, ContextExt};
 use crate::{BuildError, EvalError, Permutation};
 use failure::Error;

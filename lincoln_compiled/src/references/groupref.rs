@@ -1,7 +1,7 @@
-use crate::error::{EvalError, CodeRefError};
+use super::CodeRef;
 use crate::entries::CodeGroup;
 use crate::error::BuildError;
-use super::CodeRef;
+use crate::error::{CodeRefError, EvalError};
 use crate::program::Program;
 
 /// A `GroupRef` refers to a group of `CodeRef`, used for
