@@ -1,5 +1,4 @@
-use crate::{EvalError, ValueAccessError};
-use lincoln_common::AnyDebugDisplay;
+use crate::{ValueAccessError, AnyDebugDisplay};
 
 mod context;
 mod traits;
@@ -16,7 +15,7 @@ where
 {
     Box::new(Wrapped(Some(t)))
 }
-pub fn unwrap<T>(v: Box<dyn Value>) -> Result<T, EvalError>
+pub fn unwrap<T>(v: Box<dyn Value>) -> Result<T, ValueAccessError>
 where
     T: AnyDebugDisplay,
 {
@@ -24,7 +23,7 @@ where
         .downcast::<Wrapped<T>>()
         .map_err(|_| ValueAccessError::UnwrapNotWrapped("not Wrapped type".into()))?
         .0
-        .ok_or_else(|| EvalError::from(ValueAccessError::UnwrapEmptyValue))
+        .ok_or_else(|| ValueAccessError::UnwrapEmptyValue)
 }
 
 pub fn default_context() -> Box<dyn Context> {

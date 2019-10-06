@@ -1,4 +1,5 @@
 use crate::references::{EntryRef, ExternRef, GroupRef};
+use lincoln_common::ValueAccessError;
 
 use failure::Error;
 
@@ -26,12 +27,6 @@ pub enum EvalError {
 
     #[fail(display = "Calling a wrapped value")]
     CallingWrapped,
-
-    #[fail(
-        display = "Wrong number of arguments, need {} given {}",
-        expect, actual
-    )]
-    UnexpectedArgs { expect: u8, actual: u8 },
 
     #[fail(display = "{}", _0)]
     CodeRef(CodeRefError),
@@ -67,32 +62,4 @@ pub enum CodeRefError {
 
     #[fail(display = "Only extern code reference can be put in auto-wrapping closure")]
     CodeRefNotExtern,
-}
-
-/// Errors may occurs when working with values
-#[derive(Fail, Debug)]
-pub enum ValueAccessError {
-    #[fail(display = "Splitting context at {}, total {}", at, total)]
-    SplitOutOfRange { at: u8, total: u8 },
-
-    #[fail(display = "Pop from empty context")]
-    PopFromEmpty,
-
-    #[fail(display = "Attempt to unwrap a value that was not wrapped - {}", _0)]
-    UnwrapNotWrapped(String),
-
-    #[fail(display = "Unwrapping closure with non-empty context")]
-    UnwrappingNonEmptyClosure,
-
-    #[fail(display = "Unwrapping closure with multiple variants")]
-    UnwrappingMultivariantClosure,
-
-    #[fail(display = "Only value externs can be put in auto-wrapping closure")]
-    ExternNotValue,
-
-    #[fail(display = "Cannot turn into wrapped")]
-    CannotTurnIntoWrapped,
-
-    #[fail(display = "Unwrap empty value")]
-    UnwrapEmptyValue,
 }

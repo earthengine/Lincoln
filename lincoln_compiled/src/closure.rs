@@ -1,7 +1,8 @@
 use crate::program::Program;
 use crate::references::GroupRef;
 use crate::entries::ExternEntry;
-use super::{CodeRef, Context, ContextExt, Value};
+use super::CodeRef;
+use lincoln_common::{Context, ContextExt, Value};
 use crate::EvalError;
 use core::fmt::{Debug, Display};
 use core::mem::replace;

@@ -1,7 +1,7 @@
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
 use crate::references::{CodeRef, EntryRef, ExternRef, GroupRef};
-use crate::value::{Context, ContextExt};
-use crate::{BuildError, EvalError, Permutation};
+use lincoln_common::{Context, ContextExt, Permutation};
+use crate::{BuildError, EvalError};
 use crate::closure::{closure_prog, eval_closure};
 use failure::Error;
 use lincoln_common::{Access, StringLike};

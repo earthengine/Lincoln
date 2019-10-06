@@ -1,6 +1,6 @@
 use super::CodeRef;
 use crate::error::EvalError;
-use crate::Context;
+use lincoln_common::Context;
 
 /// Represents an external function that can be evaluated
 /// It can be a function pointer or a

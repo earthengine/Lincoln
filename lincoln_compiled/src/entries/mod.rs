@@ -1,6 +1,5 @@
-use crate::value::{Value, Context};
+use lincoln_common::{Value, Context, Permutation};
 use crate::error::EvalError;
-use crate::permutation::Permutation;
 use crate::references::{CodeRef, GroupRef};
 use smallvec::SmallVec;
 

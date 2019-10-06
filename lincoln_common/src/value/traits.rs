@@ -1,8 +1,7 @@
-use crate::error::{EvalError, ValueAccessError};
+use crate::{ValueAccessError, AnyDebugDisplay};
 use crate::permutation::Permutation;
 use core::fmt::Display;
 use core::iter::once;
-use lincoln_common::AnyDebugDisplay;
 
 pub trait Acceptor<Value> {
     type Output;
@@ -62,9 +61,9 @@ pub trait ContextExt: Context {
         result.extend(&mut values.iter_mut().map(|x| &mut **x));
         Ok(result)
     }
-    fn expect_args(&self, args: u8) -> Result<(), EvalError> {
+    fn expect_args(&self, args: u8) -> Result<(), ValueAccessError> {
         if self.len() != args {
-            Err(EvalError::UnexpectedArgs {
+            Err(ValueAccessError::UnexpectedArgs {
                 expect: args,
                 actual: self.len(),
             })

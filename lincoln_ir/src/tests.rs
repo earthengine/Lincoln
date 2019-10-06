@@ -3,7 +3,8 @@ mod test {
     use crate::PreCompileProgram;
     use failure::Error;
     use lincoln_compiled::CodeRef::Termination;
-    use lincoln_compiled::{default_context, unwrap, wrap, ContextExt, EvalFn, ExternEntry};
+    use lincoln_compiled::{EvalFn, ExternEntry};
+    use lincoln_common::{default_context, unwrap, wrap, ContextExt};
     #[test]
     fn test_call_ret() -> Result<(), Error> {
         let mut prog: PreCompileProgram = Default::default();

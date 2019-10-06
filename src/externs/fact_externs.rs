@@ -1,4 +1,5 @@
-use lincoln_compiled::{ContextExt, ExternEntry};
+use lincoln_common::ContextExt;
+use lincoln_compiled::ExternEntry;
 
 eval_fn!(_eq(c), 3, cont, [n1, n2]:[usize,usize], {
     debug!("{}=={}: {}", n2, n1, n2 == n1);
@@ -10,13 +11,13 @@ eval_fn!(_eq(c), 3, cont, [n1, n2]:[usize,usize], {
 });
 eval_fn!(_mul(c), 3, cont, [n1,n2]:[usize,usize], {
     debug!("{}*{} = {}", n2, n1, n2 * n1);
-    c.push(lincoln_compiled::wrap(n2 * n1));
+    c.push(lincoln_common::wrap(n2 * n1));
 
     lincoln_compiled::eval_closure(cont, c, 0)
 });
 eval_fn!(_minus(c), 3, cont, [n1,n2]:[usize,usize], {
     debug!("{}-{} = {}", n2, n1, n2 - n1);
-    c.push(lincoln_compiled::wrap(n2 - n1));
+    c.push(lincoln_common::wrap(n2 - n1));
 
     lincoln_compiled::eval_closure(cont, c, 0)
 });
@@ -24,19 +25,19 @@ eval_fn!(_try_minus(c), 3, cont, [n1,n2]:[usize,usize], {
     debug!("{}-{}", n2, n1);
     if n2>=n1 {
         debug!("{}-{} = {}", n2, n1, n2 - n1);
-        c.push(lincoln_compiled::wrap(n2-n1));
+        c.push(lincoln_common::wrap(n2-n1));
         lincoln_compiled::eval_closure(cont, c, 0)
     } else {
-        c.push(lincoln_compiled::wrap(n2));
-        c.push(lincoln_compiled::wrap(n1));
+        c.push(lincoln_common::wrap(n2));
+        c.push(lincoln_common::wrap(n1));
         lincoln_compiled::eval_closure(cont, c, 1)
     }
 });
 
 eval_fn!(_drop_int(c), 2, cont, [_v1]: [usize], { lincoln_compiled::eval_closure(cont, c, 0) });
 eval_fn!(_copy_int(c), 2, cont, [v]: [usize], {
-    c.push(lincoln_compiled::wrap(v));
-    c.push(lincoln_compiled::wrap(v));
+    c.push(lincoln_common::wrap(v));
+    c.push(lincoln_common::wrap(v));
 
     lincoln_compiled::eval_closure(cont, c, 0)
 });

@@ -3,8 +3,8 @@ use crate::externs::fact_externs::FACT_EXTERNS;
 use crate::externs::print;
 use core::fmt::{Display, Formatter};
 use failure::Error;
-use lincoln_common::Access;
-use lincoln_compiled::{CodeRef, Program, Context, ContextExt, Value};
+use lincoln_common::{Access, Context, ContextExt, Value};
+use lincoln_compiled::{CodeRef, Program};
 use lincoln_ir::PreCompileProgram;
 use regex::{Captures, Regex};
 use std::fs::File;
@@ -263,7 +263,7 @@ impl CommandContext {
         for s in values.split(',') {
             if let Some(capture) = us.captures(s) {
                 if let Some(value) = capture.name("value") {
-                    r.push(lincoln_compiled::wrap(value.as_str().parse::<usize>()?))
+                    r.push(lincoln_common::wrap(value.as_str().parse::<usize>()?))
                 }
             }
         }
@@ -284,7 +284,7 @@ impl CommandContext {
         let values = c.name("value").expect("value is none").as_str();
         let values = Self::parse_string(values)?;
         let step = c.name("runstep").map(|_| true).unwrap_or(false);
-        let mut ctx: Box<dyn Context> = lincoln_compiled::default_context();
+        let mut ctx: Box<dyn Context> = lincoln_common::default_context();
         ctx.push(lincoln_compiled::native_closure("print", |c, _| print(c)));
         for value in values {
             ctx.push(value);

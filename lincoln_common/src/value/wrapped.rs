@@ -1,6 +1,6 @@
 use super::Value;
 use core::fmt::{Debug, Display, Formatter};
-use lincoln_common::AnyDebugDisplay;
+use crate::AnyDebugDisplay;
 
 pub(super) struct Wrapped<T>(pub(super) Option<T>);
 impl<T> Debug for Wrapped<T>

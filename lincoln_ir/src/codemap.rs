@@ -1,6 +1,6 @@
 use crate::entry::EntryRef;
-use lincoln_common::StringLike;
-use lincoln_compiled::{BuildError, CodeRef, ExternEntry, GroupRef, Permutation, Program};
+use lincoln_common::{StringLike, Permutation};
+use lincoln_compiled::{BuildError, CodeRef, ExternEntry, GroupRef, Program};
 use std::collections::BTreeMap;
 
 #[derive(Fail, Debug)]

@@ -1,32 +1,33 @@
-use lincoln_compiled::{ContextExt, EvalError, ExternEntry};
+use lincoln_common::ContextExt;
+use lincoln_compiled::{EvalError, ExternEntry};
 
 eval_fn_untyped!(_from(c), 2, [v, cont], {
-    let v = lincoln_compiled::unwrap::<usize>(v)?;
+    let v = lincoln_common::unwrap::<usize>(v)?;
     debug!("from {}", v);
     if v == 0 {
         lincoln_compiled::eval_closure(cont, c, 0)
     } else if v % 2 == 1 {
         let n = (v - 1) / 2;
         c.push(lincoln_compiled::native_closure("from", move |c, _| {
-            c.push(lincoln_compiled::wrap(n));
+            c.push(lincoln_common::wrap(n));
             _from(c)
         }));
         lincoln_compiled::eval_closure(cont, c, 1)
     } else {
         let n = (v - 2) / 2;
         c.push(lincoln_compiled::native_closure("from", move |c, _| {
-            c.push(lincoln_compiled::wrap(n));
+            c.push(lincoln_common::wrap(n));
             _from(c)
         }));
         lincoln_compiled::eval_closure(cont, c, 2)
     }
 });
 eval_fn_untyped!(_onzero(c), 1, [cont], {
-    c.push(lincoln_compiled::wrap(0usize));
+    c.push(lincoln_common::wrap(0usize));
     lincoln_compiled::eval_closure(cont, c, 0)
 });
 eval_fn!(_onodd_result(c), 2, cont, [v]: [usize], {
-    c.push(lincoln_compiled::wrap(v * 2 + 1));
+    c.push(lincoln_common::wrap(v * 2 + 1));
     lincoln_compiled::eval_closure(cont, c, 0)
 });
 eval_fn_untyped!(_onodd(c), 2, [cont, v], {
@@ -38,7 +39,7 @@ eval_fn_untyped!(_onodd(c), 2, [cont, v], {
     _count(c)
 });
 eval_fn!(_oneven_result(c), 2, cont, [v]: [usize], {
-    c.push(lincoln_compiled::wrap(v * 2 + 2));
+    c.push(lincoln_common::wrap(v * 2 + 2));
     lincoln_compiled::eval_closure(cont, c, 0)
 });
 eval_fn_untyped!(_oneven(c), 2, [cont, v], {

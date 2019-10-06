@@ -2,8 +2,8 @@ use crate::codemap::CodeMap;
 use crate::entry::{Entry, EntryRef};
 use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
-use lincoln_common::{Access, AccessMut, StringLike};
-use lincoln_compiled::{AsPermutation, ExternEntry, Permutation, Program};
+use lincoln_common::{Access, AccessMut, StringLike, AsPermutation, Permutation};
+use lincoln_compiled::{ExternEntry, Program};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
 #[derive(Serialize, Deserialize, Default)]

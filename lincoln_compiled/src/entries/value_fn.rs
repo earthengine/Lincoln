@@ -1,4 +1,4 @@
-use crate::Value;
+use lincoln_common::Value;
 
 /// Represents an external function that can produce values.
 /// It can be a function pointer or a
