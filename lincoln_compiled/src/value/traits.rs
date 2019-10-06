@@ -1,11 +1,8 @@
-use super::CodeRef;
-use crate::error::EvalError;
-use crate::error::ValueAccessError;
+use crate::error::{EvalError, ValueAccessError};
 use crate::permutation::Permutation;
 use core::fmt::Display;
 use core::iter::once;
-use lincoln_common::mut_box_to_mut;
-use lincoln_common::traits::AnyDebugDisplay;
+use lincoln_common::AnyDebugDisplay;
 
 pub trait Acceptor<Value> {
     type Output;
@@ -14,8 +11,6 @@ pub trait Acceptor<Value> {
 }
 
 pub trait Value: AnyDebugDisplay {
-    fn eval(self: Box<Self>, ctx: &mut dyn Context, variant: u8) -> Result<CodeRef, EvalError>;
-    fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>>;
     fn take(&mut self) -> Box<dyn Value>;
 }
 pub trait Context: Display {
@@ -23,7 +18,7 @@ pub trait Context: Display {
     fn create_empty(&self) -> Box<dyn Context>;
     fn permutate(&mut self, per: Permutation);
     fn take_after(&mut self, at: u8, values_accepter: &mut dyn FnMut(&mut dyn Value)) -> u8;
-    fn put_many(&'_ mut self, values: &mut dyn Iterator<Item = &mut dyn Value>);
+    fn extend(&'_ mut self, values: &mut dyn Iterator<Item = &mut dyn Value>);
     fn len(&self) -> u8;
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -48,7 +43,7 @@ pub trait ContextExt: Context {
         }
     }
     fn push(&mut self, mut v: Box<dyn Value>) {
-        self.put_many(&mut once(&mut *v));
+        self.extend(&mut once(&mut *v));
     }
 
     fn split(&mut self, cnt: u8) -> Result<Box<dyn Context>, ValueAccessError> {
@@ -64,7 +59,7 @@ pub trait ContextExt: Context {
         });
 
         let mut result = self.create_empty();
-        result.put_many(&mut values.iter_mut().map(mut_box_to_mut));
+        result.extend(&mut values.iter_mut().map(|x| &mut **x));
         Ok(result)
     }
     fn expect_args(&self, args: u8) -> Result<(), EvalError> {
@@ -81,12 +76,12 @@ pub trait ContextExt: Context {
     ///
     /// other: the other context to merge
     ///
-    fn append(&mut self, other: &mut dyn Context) {
+    fn merge(&mut self, other: &mut dyn Context) {
         let mut values = vec![];
         other.take_after(0, &mut |value| {
             values.push(value.take());
         });
-        self.put_many(&mut values.iter_mut().map(mut_box_to_mut));
+        self.extend(&mut values.iter_mut().map(|x| &mut **x));
     }
 }
 

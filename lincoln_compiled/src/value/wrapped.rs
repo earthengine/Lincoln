@@ -1,7 +1,6 @@
-use super::{CodeRef, Context, Value};
-use crate::error::EvalError;
+use super::Value;
 use core::fmt::{Debug, Display, Formatter};
-use lincoln_common::traits::AnyDebugDisplay;
+use lincoln_common::AnyDebugDisplay;
 
 pub(super) struct Wrapped<T>(pub(super) Option<T>);
 impl<T> Debug for Wrapped<T>
@@ -27,13 +26,12 @@ impl<T> Value for Wrapped<T>
 where
     T: AnyDebugDisplay,
 {
-    fn eval(self: Box<Self>, _: &mut dyn Context, _: u8) -> Result<CodeRef, EvalError> {
-        Err(EvalError::CallingWrapped)
-    }
-    fn into_wrapped(self: Box<Self>) -> Option<Box<dyn Value>> {
-        Some(self)
-    }
     fn take(&mut self) -> Box<dyn Value> {
         Box::new(Wrapped(self.0.take()))
+    }
+}
+impl<T> Default for Wrapped<T> {
+    fn default() -> Self {
+        Wrapped(None)
     }
 }

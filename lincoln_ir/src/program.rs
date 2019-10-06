@@ -2,7 +2,7 @@ use crate::codemap::CodeMap;
 use crate::entry::{Entry, EntryRef};
 use core::fmt::{Debug, Display, Formatter};
 use failure::Error;
-use lincoln_common::traits::{Access, AccessMut, StringLike};
+use lincoln_common::{Access, AccessMut, StringLike};
 use lincoln_compiled::{AsPermutation, ExternEntry, Permutation, Program};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 

@@ -1,5 +1,5 @@
-use super::closure::Closure;
-use super::{Context, Value};
+use core::fmt::{Display, Formatter};
+use super::{Context, Value, Wrapped};
 use crate::permutation::Permutation;
 
 /// A Context is a container of values.
@@ -21,12 +21,14 @@ impl std::fmt::Display for ContextImpl {
         write!(fmt, ")")
     }
 }
+#[derive(Debug)]
+enum Bottom {}
+impl Display for Bottom {
+    fn fmt(&self, _:&mut Formatter) -> std::fmt::Result { Ok(()) }
+}
 impl Context for ContextImpl {
     fn empty_value(&self) -> Box<dyn Value> {
-        Box::new(Closure {
-            tags: vec![],
-            context: self.create_empty(),
-        })
+        Box::new(<Wrapped<Bottom> as Default>::default())
     }
     fn create_empty(&self) -> Box<dyn Context> {
         Box::new(ContextImpl::default())
@@ -53,7 +55,7 @@ impl Context for ContextImpl {
         }
         values.len() as u8
     }
-    fn put_many(&mut self, values: &mut dyn Iterator<Item = &mut dyn Value>) {
+    fn extend(&mut self, values: &mut dyn Iterator<Item = &mut dyn Value>) {
         self.0.extend(values.map(|x| x.take()));
     }
 }

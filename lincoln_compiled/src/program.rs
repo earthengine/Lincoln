@@ -1,9 +1,10 @@
 use crate::entries::{CodeGroup, Entry, ExportEntry, ExternEntry};
 use crate::references::{CodeRef, EntryRef, ExternRef, GroupRef};
-use crate::value::{closure_prog, Context, ContextExt};
+use crate::value::{Context, ContextExt};
 use crate::{BuildError, EvalError, Permutation};
+use crate::closure::{closure_prog, eval_closure};
 use failure::Error;
-use lincoln_common::traits::{Access, StringLike};
+use lincoln_common::{Access, StringLike};
 
 /// A compiled lincoln program
 ///
@@ -233,7 +234,7 @@ impl Program {
                 }
                 Some(Entry::Return { variant }) => {
                     let v = ctx.pop()?;
-                    v.eval(ctx, *variant)
+                    eval_closure(v, ctx, *variant)
                 }
                 _ => Err(ent.not_found().into()),
             },
@@ -245,7 +246,7 @@ impl Program {
                             ctx.expect_args(1)?;
                             let c = ctx.pop()?;
                             ctx.push(value.get_value());
-                            c.eval(ctx, 0)
+                            eval_closure(c, ctx, 0)
                         }
                     }
                 } else {

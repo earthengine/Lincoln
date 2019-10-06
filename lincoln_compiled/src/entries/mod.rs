@@ -1,7 +1,10 @@
+use crate::value::{Value, Context};
+use crate::error::EvalError;
 use crate::permutation::Permutation;
 use crate::references::{CodeRef, GroupRef};
 use smallvec::SmallVec;
 
+mod wrapped_fn;
 mod eval_fn;
 mod export_entry;
 mod extern_entry;
@@ -11,6 +14,8 @@ pub use eval_fn::EvalFn;
 pub use export_entry::ExportEntry;
 pub use extern_entry::ExternEntry;
 pub use value_fn::ValueFn;
+
+use wrapped_fn::WrappedFn;
 
 pub(crate) type CodeGroup = SmallVec<[CodeRef; 5]>;
 
@@ -46,4 +51,10 @@ impl std::fmt::Debug for Entry {
     fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(fmt, "{}", self)
     }
+}
+pub fn native_closure(
+    name: impl Into<String>,
+    f: impl FnOnce(&mut dyn Context, u8) -> Result<CodeRef, EvalError> + 'static,
+) -> Box<dyn Value> {
+    Box::new(WrappedFn(name.into(), Some(f)))
 }

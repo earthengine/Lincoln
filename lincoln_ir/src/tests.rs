@@ -55,7 +55,7 @@ mod test {
                             let v = c.pop().unwrap();
                             assert_eq!(unwrap::<i32>(c.pop().unwrap()).unwrap(), 2);
                             assert_eq!(unwrap::<i32>(c.pop().unwrap()).unwrap(), 1);
-                            v.eval(c, 0)
+                            lincoln_compiled::eval_closure(v, c, 0)
                         }),
                     },
                     (ExternEntry::Eval {

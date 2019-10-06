@@ -1,6 +1,6 @@
 use crate::PreCompileProgram;
 use failure::Error;
-use lincoln_common::traits::{Access, AccessMut};
+use lincoln_common::{Access, AccessMut};
 use lincoln_compiled::Permutation;
 use std::fmt::{Debug, Display, Formatter};
 

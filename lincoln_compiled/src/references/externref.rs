@@ -2,7 +2,7 @@ use super::CodeRef;
 use crate::entries::ExternEntry;
 use crate::error::CodeRefError;
 use crate::program::Program;
-use lincoln_common::traits::Access;
+use lincoln_common::Access;
 
 /// An `ExternRef` refers to an external entry defined in a program.
 #[derive(Copy, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

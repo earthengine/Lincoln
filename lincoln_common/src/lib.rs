@@ -1,14 +1,7 @@
 #![deny(bare_trait_objects)]
 
-#[allow(clippy::borrowed_box)]
-pub fn mut_box_to_mut<'a, T>(v: &'a mut Box<T>) -> &'a mut T
-where
-    T: ?Sized,
-{
-    &mut **v
-}
-
-pub mod traits;
+mod traits;
+pub use traits::{Access, AccessMut, AnyDebugDisplay, StringLike};
 
 #[cfg(test)]
 mod tests {
